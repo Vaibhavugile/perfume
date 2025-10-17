@@ -1,0 +1,199 @@
+/* src/findYourScent.css
+   Shop by Mood / Find Your Scent styles
+   Matches the charcoal luxe theme and animations.
+*/
+
+:root {
+  --accent1: #c850c0;
+  --accent2: #4158d0;
+  --muted: #b9b9b9;
+  --bg: #121214;
+  --card: #1e1e20;
+  --max-width: 1100px;
+}
+
+.find-scent-section {
+  padding: 56px 20px;
+  background: linear-gradient(180deg, rgba(18,18,20,0.6), rgba(10,10,11,0.8));
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* header */
+.find-scent-section .container { max-width: var(--max-width); margin: 0 auto; position: relative; z-index: 2; }
+.fy-header .section-title { font-size: 26px; margin: 0 0 6px; }
+.fy-header .section-sub { color: var(--muted); margin: 0 0 18px; }
+
+/* mood row */
+.mood-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.mood-orb {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 0;
+  border-radius: 14px;
+  text-align: center;
+  cursor: pointer;
+  color: #fff;
+  overflow: hidden;
+  transition: transform .28s ease, box-shadow .28s ease, background .28s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 220px;
+}
+.mood-orb:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.6);
+}
+
+.mood-orb.active {
+  border-color: rgba(200,110,220,0.6);
+  box-shadow: 0 22px 52px rgba(200,110,220,0.06);
+}
+/* gradient per mood via inline CSS variables */
+.mood-orb { --g1: #fff0; --g2: #fff0; background-image: linear-gradient(135deg, var(--g1), var(--g2)), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); background-blend-mode: screen, normal; }
+.mood-orb .orb-emoji { font-size: 24px; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.03); border-radius: 10px; }
+.mood-orb .orb-title { font-weight: 700; margin-top: 6px; }
+.mood-orb .orb-desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* ring decorative */
+.mood-orb .orb-ring {
+  position: absolute;
+  right: -26px;
+  top: -26px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.03);
+  transform: rotate(12deg);
+  opacity: 0.5;
+}
+
+/* results area */
+.mood-results { margin-top: 18px; }
+.mood-empty { padding: 18px 12px; color: var(--muted); }
+
+.results-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; gap:12px; }
+.results-head h3 { margin: 0; font-size: 18px; }
+.results-head .tag { color: var(--accent1); font-weight:700; }
+.results-actions { display:flex; gap:8px; align-items:center; }
+
+/* small product grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.product-card-mini {
+  background: linear-gradient(180deg, rgba(30,30,31,0.85), rgba(18,18,19,0.9));
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow: hidden;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  align-items: center;
+}
+.pcm-media { width: 84px; height: 84px; flex: 0 0 84px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); border-radius: 8px; }
+.pcm-media img { max-height: 72px; max-width: 72px; object-fit: contain; display:block; }
+.pcm-body { flex: 1; display:flex; flex-direction:column; gap:6px; }
+.pcm-body h4 { margin: 0; font-size: 15px; }
+.pcm-foot { margin-top: auto; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+
+/* show more */
+.mood-showmore { display:flex; justify-content:center; margin-top:12px; }
+.mood-showmore .btn { padding:8px 14px; }
+
+/* decorative particles (subtle) */
+.find-scent-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.02), transparent 2%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.015), transparent 2%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .mood-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .product-card-mini { padding: 10px; }
+  .pcm-media { width: 72px; height: 72px; }
+}
+/* make canvas blend nicely on dark backgrounds */
+.find-scent-section { background-color: #0c0c0e; }
+/* ensure emitter canvas sits below modal overlay but above page content */
+canvas { z-index: 1000 !important; }
+
+/* QuickView overlay already uses z-index:1200 in quickview.css */
+/* mood art image (transparent PNGs inside mood orbs) */
+.orb-text {
+  position: relative;
+  z-index: 3;
+  padding: 14px 10px 16px;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.8) 100%);
+  border-radius: 0 0 14px 14px;
+}
+
+.orb-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.orb-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* image placement (keeps art behind text) */
+.orb-art-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.orb-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+  transform: scale(1.1);
+  transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+.mood-orb:hover .orb-art {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+/* keep text and emoji above the art */
+.mood-orb > *:not(.orb-art-wrap) {
+  position: relative;
+  z-index: 2;
+}
+.mood-orb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%);
+  opacity: 0.35;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.mood-orb:hover::after {
+  opacity: 0.2;
+}

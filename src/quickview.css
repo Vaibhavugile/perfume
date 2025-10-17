@@ -1,0 +1,34 @@
+/* quickview.css */
+.qv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+}
+.qv-panel {
+  width: min(980px, 96%);
+  background: linear-gradient(180deg, #0f0f10, #0b0b0c);
+  border-radius: 12px;
+  display: flex;
+  gap: 18px;
+  box-shadow: 0 30px 80px rgba(2,6,23,0.7);
+  overflow: hidden;
+  padding: 20px;
+}
+.qv-left { width: 44%; display:flex; align-items:center; justify-content:center; position:relative; }
+.qv-bottle { max-width: 92%; max-height: 340px; object-fit:contain; display:block; transform-origin:center; }
+.qv-right { width: 56%; padding: 6px 4px; display:flex; flex-direction:column; gap:12px; color:#fff; }
+.qv-notes .notes-grid { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.note-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:999px; font-size:13px; color:#fff; }
+.qv-actions { margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.qv-price { font-weight:700; color:#c850c0; font-size:18px; }
+.qv-buttons { display:flex; gap:10px; }
+@media (max-width:900px) {
+  .qv-panel { flex-direction: column; padding:12px; }
+  .qv-left, .qv-right { width:100%; }
+  .qv-bottle { max-height: 260px; }
+}

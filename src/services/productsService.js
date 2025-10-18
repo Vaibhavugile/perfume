@@ -19,16 +19,17 @@ import { db, storage } from "../firebase";
 /**
  * Firestore structure:
  * collection 'products' documents:
- *  {
- *    name: string,
- *    price: number (paise or cents),
- *    featured: boolean,
- *    tags: array<string>,
- *    imageUrl: string,
- *    description: string,
- *    notes: array<string>,
- *    createdAt: timestamp
- *  }
+ * {
+ * name: string,
+ * price: number (paise or cents - storing the 50ml price for sorting/display),
+ * prices: array<{volume: string, price: number}>, // NEW FIELD for multiple sizes
+ * featured: boolean,
+ * tags: array<string>,
+ * imageUrl: string,
+ * description: string,
+ * notes: array<string>,
+ * createdAt: timestamp
+ * }
  */
 
 /* COLLECTION REF */
@@ -60,7 +61,7 @@ export async function uploadImageFile(file, filePath = null, onProgress = () => 
 
 /* Add product (object fields) */
 export async function addProduct(product) {
-  // product: { name, price, featured, tags, imageUrl, description, notes }
+  // product: { name, price, prices, featured, tags, imageUrl, description, notes }
   const docRef = await addDoc(productsCol, {
     ...product,
     createdAt: new Date(),

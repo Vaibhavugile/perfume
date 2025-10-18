@@ -4,21 +4,33 @@ import { motion } from "framer-motion";
 import "./featured.css";
 import { getFeaturedProductsRealtime, formatPrice } from "./services/productsService";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "./contexts/CartContext";
 
-export default function FeaturedSection({ onAddToCart = () => {} }) {
+/**
+ * FeaturedSection
+ * - shows up to 3 featured products
+ * - useCart() for adding to cart
+ * - navigate to product detail for quick view / image click
+ */
+export default function FeaturedSection() {
   const [featured, setFeatured] = useState([]);
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    const unsub = getFeaturedProductsRealtime((data) => setFeatured(data));
-    return () => unsub();
+    const unsub = getFeaturedProductsRealtime((data) => {
+      // ensure array
+      setFeatured(Array.isArray(data) ? data : []);
+    });
+    return () => unsub && typeof unsub === "function" && unsub();
   }, []);
 
+  // show only 3 on homepage
   const displayed = featured.slice(0, 3);
 
   return (
     <section id="featured" className="featured-section" aria-labelledby="featured-title">
-      {/* Background perfume-style decorative layer */}
+      {/* Decorative visual layer */}
       <div className="perfume-decor" aria-hidden="true">
         <div className="notes">
           <span className="note n1" />
@@ -62,7 +74,12 @@ export default function FeaturedSection({ onAddToCart = () => {} }) {
               transition={{ delay: 0.5 + i * 0.12 }}
               whileHover={{ translateY: -6 }}
             >
-              <div className="fc-media">
+              <div
+                className="fc-media"
+                // click image to go to product detail
+                onClick={() => navigate(`/product/${p.id}`)}
+                style={{ cursor: "pointer" }}
+              >
                 <motion.img
                   src={p.imageUrl || "/smoke-fallback.jpg"}
                   alt={p.name}
@@ -83,11 +100,16 @@ export default function FeaturedSection({ onAddToCart = () => {} }) {
                   <div className="fc-actions">
                     <button
                       className="btn small ghost"
-                      onClick={() => window.alert("Quick view coming soon!")}
+                      onClick={() => navigate(`/product/${p.id}`)}
+                      aria-label={`View ${p.name}`}
                     >
-                      Quick view
+                      View
                     </button>
-                    <button className="btn small primary" onClick={() => onAddToCart(p)}>
+
+                    <button
+                      className="btn small primary"
+                      onClick={() => addToCart(p, 1)}
+                    >
                       Add
                     </button>
                   </div>

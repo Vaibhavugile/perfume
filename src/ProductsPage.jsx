@@ -6,17 +6,24 @@ import {
   getProductsRealtime,
   formatPrice,
 } from "./services/productsService";
+import { useCart } from "./contexts/CartContext";
+import { useNavigate } from "react-router-dom";
+import QuickView from "./QuickView"; // added QuickView import
 
-export default function ProductsPage({ onAddToCart = () => {} }) {
+export default function ProductsPage() {
   const [all, setAll] = useState([]);
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [visible, setVisible] = useState(6);
+  const [quickViewProduct, setQuickViewProduct] = useState(null); // QuickView state
+
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const unsub = getProductsRealtime((arr) => setAll(arr));
-    return () => unsub();
+    const unsub = getProductsRealtime((arr) => setAll(Array.isArray(arr) ? arr : []));
+    return () => unsub && typeof unsub === "function" && unsub();
   }, []);
 
   const allTags = useMemo(() => {
@@ -114,9 +121,13 @@ export default function ProductsPage({ onAddToCart = () => {} }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <div className="pc-media">
+              <div
+                className="pc-media"
+                onClick={() => setQuickViewProduct({ ...p, image: p.image || p.imageUrl })} // open QuickView on media click
+                style={{ cursor: "pointer" }}
+              >
                 <img
-                  src={p.imageUrl || "/smoke-fallback.jpg"}
+                  src={p.imageUrl || p.image || "/smoke-fallback.jpg"}
                   alt={p.name}
                   loading="lazy"
                 />
@@ -132,15 +143,13 @@ export default function ProductsPage({ onAddToCart = () => {} }) {
                   <div className="actions">
                     <button
                       className="btn small ghost"
-                      onClick={() =>
-                        alert(`Quick view coming soon for ${p.name}`)
-                      }
+                      onClick={() => setQuickViewProduct({ ...p, image: p.image || p.imageUrl })} // open QuickView when clicking View
                     >
-                      Quick View
+                      View
                     </button>
                     <button
                       className="btn small primary"
-                      onClick={() => onAddToCart(p)}
+                      onClick={() => addToCart(p, 1)}
                     >
                       Add
                     </button>
@@ -164,6 +173,15 @@ export default function ProductsPage({ onAddToCart = () => {} }) {
           <div className="muted">End of collection</div>
         ) : null}
       </div>
+
+      {/* QuickView modal */}
+      {quickViewProduct && (
+        <QuickView
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={(product) => addToCart(product, 1)}
+        />
+      )}
     </main>
   );
 }

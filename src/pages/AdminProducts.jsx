@@ -37,52 +37,70 @@ export default function AdminProducts() {
         {products.length === 0 && (
           <p className="muted small">No products added yet.</p>
         )}
-        {products.map((p) => (
-          <motion.div
-            key={p.id}
-            className="admin-card"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="admin-card-media">
-              <img
-                src={p.imageUrl || "/smoke-fallback.jpg"}
-                alt={p.name}
-                loading="lazy"
-              />
-            </div>
-            <div className="admin-card-body">
-              <h3>{p.name}</h3>
-              <p className="muted small">{p.description}</p>
-              <div className="muted tiny">
-                Tags: {(p.tags || []).join(", ")}
+        {products.map((p) => {
+          // --- LOGIC TO GET THE MAIN (50ML) PRICE ---
+          const priceObj50ml = p.prices
+            ? p.prices.find((priceObj) => priceObj.volume === "50ml")
+            : null;
+            
+          // Prioritize the 50ml price from the new 'prices' array,
+          // then fall back to the old 'p.price' field
+          const mainPriceInCents = priceObj50ml ? priceObj50ml.price : p.price;
+
+          const formattedPrice = mainPriceInCents
+            ? `₹${(mainPriceInCents / 100).toFixed(2)} (50ml)`
+            : "Price N/A";
+          // --------------------------------------------
+          
+          return (
+            <motion.div
+              key={p.id}
+              className="admin-card"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="admin-card-media">
+                <img
+                  src={p.imageUrl || "/smoke-fallback.jpg"}
+                  alt={p.name}
+                  loading="lazy"
+                />
               </div>
-              <div className="admin-card-actions">
-                <button
-                  className="btn ghost small"
-                  onClick={() => {
-                    setEditing(p);
-                    setShowForm(true);
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  className="btn ghost small danger"
-                  onClick={async () => {
-                    if (
-                      window.confirm(`Are you sure you want to delete "${p.name}"?`)
-                    ) {
-                      await deleteProduct(p.id);
-                    }
-                  }}
-                >
-                  Delete
-                </button>
+              <div className="admin-card-body">
+                <h3>{p.name}</h3>
+                {/* Display the 50ml price */}
+                <p className="price-display">{formattedPrice}</p>
+                <p className="muted small">{p.description}</p>
+                <div className="muted tiny">
+                  Tags: {(p.tags || []).join(", ")}
+                </div>
+                <div className="admin-card-actions">
+                  <button
+                    className="btn ghost small"
+                    onClick={() => {
+                      setEditing(p);
+                      setShowForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn ghost small danger"
+                    onClick={async () => {
+                      if (
+                        window.confirm(`Are you sure you want to delete "${p.name}"?`)
+                      ) {
+                        await deleteProduct(p.id);
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </section>
 
       {/* Add/Edit Modal */}

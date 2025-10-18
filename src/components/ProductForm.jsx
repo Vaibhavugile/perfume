@@ -7,10 +7,27 @@ import {
 } from "../services/productsService";
 import "../styles/productForm.css";
 
+// Helper function to safely extract a price for a specific volume from the 'prices' array
+// This function is defined here, local to ProductForm, which fixes the import error.
+const getPriceForVolume = (product, volume) => {
+  // 1. Check the new 'prices' array
+  const priceObj = product?.prices?.find((p) => p.volume === volume);
+  if (priceObj) {
+    return (priceObj.price / 100).toFixed(2);
+  }
+  // 2. Fallback for the old single 'price' field (only for 50ml)
+  if (volume === "50ml" && product?.price) {
+    return (product.price / 100).toFixed(2);
+  }
+  return "";
+};
+
 export default function ProductForm({ product = null, onSaved = () => {}, onCancel = () => {} }) {
   const [formData, setFormData] = useState({
     name: product?.name || "",
-    price: product?.price ? (product.price / 100).toFixed(2) : "",
+    // Initialize price fields using the helper function
+    price50ml: getPriceForVolume(product, "50ml"),
+    price100ml: getPriceForVolume(product, "100ml"),
     featured: product?.featured || false,
     tags: (product?.tags || []).join(", "),
     description: product?.description || "",
@@ -51,9 +68,28 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
         imageUrl = url;
       }
 
+      // --- NEW PRICE ARRAY CREATION LOGIC ---
+      const pricesData = [
+        {
+          volume: "50ml",
+          price: Math.round(parseFloat(formData.price50ml || 0) * 100),
+        },
+        {
+          volume: "100ml",
+          price: Math.round(parseFloat(formData.price100ml || 0) * 100),
+        },
+      ].filter((p) => p.price > 0); // Only save volumes with a price
+
+      // Set the 50ml price as the main 'price' for easy display/sorting, as requested
+      const mainPrice = pricesData.find((p) => p.volume === "50ml")?.price || 0;
+      // --------------------------------------
+
       const payload = {
         name: formData.name,
-        price: Math.round(parseFloat(formData.price) * 100),
+        // Save the main 50ml price here
+        price: mainPrice, 
+        // Save the array of all prices
+        prices: pricesData,
         featured: !!formData.featured,
         tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
         description: formData.description,
@@ -92,18 +128,33 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
         />
       </label>
 
-      <label>
-        Price (₹)
-        <input
-          required
-          type="number"
-          step="0.01"
-          name="price"
-          value={formData.price}
-          onChange={handleChange}
-          placeholder="499.00"
-        />
-      </label>
+      {/* --- NEW PRICE INPUTS --- */}
+      <div className="price-inputs-group" style={{ display: 'flex', gap: '10px' }}>
+        <label>
+          Price - 50ml (₹)
+          <input
+            required
+            type="number"
+            step="0.01"
+            name="price50ml"
+            value={formData.price50ml}
+            onChange={handleChange}
+            placeholder="499.00"
+          />
+        </label>
+        <label>
+          Price - 100ml (₹)
+          <input
+            type="number"
+            step="0.01"
+            name="price100ml"
+            value={formData.price100ml}
+            onChange={handleChange}
+            placeholder="899.00"
+          />
+        </label>
+      </div>
+      {/* ------------------------ */}
 
       <label className="checkbox-field">
         <input

@@ -14,7 +14,7 @@ import {
   limit,
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebaseConfig";
+import { db, storage } from "../firebase";
 
 /**
  * Firestore structure:
@@ -102,10 +102,26 @@ export function getProductsRealtime(callback, { tag = null } = {}) {
   return unsub;
 }
 
+/* Real-time listener for featured products only */
+export function getFeaturedProductsRealtime(callback) {
+  const q = query(productsCol, where("featured", "==", true), orderBy("createdAt", "desc"));
+  const unsub = onSnapshot(q, (snapshot) => {
+    const arr = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    callback(arr);
+  });
+  return unsub;
+}
+
 /* get single product by id */
 export async function getProductById(id) {
   const d = doc(db, "products", id);
   const snap = await getDoc(d);
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() };
+}
+
+/* Utility: format price (in paise -> rupees) */
+export function formatPrice(n) {
+  if (typeof n !== "number") return "";
+  return `₹${(n / 100).toFixed(2)}`;
 }

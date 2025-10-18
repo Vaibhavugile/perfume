@@ -88,6 +88,7 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
           name="name"
           value={formData.name}
           onChange={handleChange}
+          placeholder="Enter perfume name"
         />
       </label>
 
@@ -100,6 +101,7 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
           name="price"
           value={formData.price}
           onChange={handleChange}
+          placeholder="499.00"
         />
       </label>
 
@@ -119,7 +121,7 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
           name="tags"
           value={formData.tags}
           onChange={handleChange}
-          placeholder="e.g. floral, oud, romantic"
+          placeholder="floral, oud, romantic"
         />
       </label>
 
@@ -130,6 +132,7 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
           value={formData.description}
           onChange={handleChange}
           rows="3"
+          placeholder="Short product description"
         />
       </label>
 

@@ -1,17 +1,19 @@
 // src/FindYourScent.jsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import "./findYourScent.css";
-import { getProducts, formatPrice } from "./data/products";
+// switched to live data + helper from services
+import { getProductsRealtime, formatPrice } from "./services/productsService";
 import ScentEmitter from "./ScentEmitter";
 import QuickView from "./QuickView";
+
 /* MOODS list (art, colors etc.) */
 const MOODS = [
   {
     id: "romantic",
     title: "Romantic",
     desc: "Soft florals, warm vanilla, tender musk.",
-   // icon: "💗",
+    // icon: "💗",
     tags: ["floral", "vanilla", "amber"],
     color: ["rgba(246,192,232,0.95)", "rgba(200,110,220,0.9)"],
     art: "/mood-romantic.png",
@@ -20,7 +22,7 @@ const MOODS = [
     id: "fresh",
     title: "Fresh",
     desc: "Citrus lift, green accords, clean musk.",
-   // icon: "🍋",
+    // icon: "🍋",
     tags: ["citrus", "fresh", "green"],
     color: ["rgba(191,233,255,0.95)", "rgba(104,195,255,0.9)"],
     art: "/mood-fresh.png",
@@ -29,7 +31,7 @@ const MOODS = [
     id: "mysterious",
     title: "Mysterious",
     desc: "Smoky woods, deep oud, dark amber.",
-    //icon: "🖤",
+    // icon: "🖤",
     tags: ["oriental", "woody", "smoky"],
     color: ["rgba(198,176,255,0.9)", "rgba(111,66,193,0.85)"],
     art: "/mood-mysterious.png",
@@ -38,7 +40,7 @@ const MOODS = [
     id: "bright",
     title: "Bright",
     desc: "Sparkling top notes, playful lively energy.",
-    //icon: "☀️",
+    // icon: "☀️",
     tags: ["citrus", "fresh"],
     color: ["rgba(255,240,184,0.95)", "rgba(255,184,77,0.9)"],
     art: "/mood-bright.png",
@@ -47,7 +49,7 @@ const MOODS = [
     id: "comfort",
     title: "Comforting",
     desc: "Warm spice, vanilla, gentle amber embrace.",
-    //icon: "🕯️",
+    // icon: "🕯️",
     tags: ["amber", "spicy", "vanilla"],
     color: ["rgba(255,214,192,0.95)", "rgba(217,142,106,0.9)"],
     art: "/mood-comfort.png",
@@ -55,13 +57,23 @@ const MOODS = [
 ];
 
 export default function FindYourScent({ onAddToCart = () => {} }) {
-  const all = useMemo(() => getProducts(), []);
+  // live products from Firestore
+  const [all, setAll] = useState([]);
+  useEffect(() => {
+    const unsub = getProductsRealtime((data) => {
+      // ensure consistent shape
+      setAll(Array.isArray(data) ? data : []);
+    });
+    return () => unsub && typeof unsub === "function" && unsub();
+  }, []);
+
   const [activeMood, setActiveMood] = useState(null);
   const [showAllForMood, setShowAllForMood] = useState(false);
-const [hoveredBottleId, setHoveredBottleId] = useState(null);
-const hoveredRef = useRef(null);            // ref for emitter when hovering a bottle
-const [quickProduct, setQuickProduct] = useState(null);
-const quickRef = useRef(null);              // ref to attach emitter when modal open
+
+  const [hoveredBottleId, setHoveredBottleId] = useState(null);
+  const hoveredRef = useRef(null); // ref for emitter when hovering a bottle
+  const [quickProduct, setQuickProduct] = useState(null);
+  const quickRef = useRef(null); // ref to attach emitter when modal open
 
   // refs for orbs so emitter can attach
   const orbRefs = useRef({});
@@ -119,10 +131,11 @@ const quickRef = useRef(null);              // ref to attach emitter when modal 
                 <div className="orb-art-wrap" aria-hidden={!m.art}>
                   <motion.img src={m.art} alt="" className="orb-art" initial={{ opacity: 0, y: 6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.8 }} />
                 </div>
-<div className="orb-text">
-  <div className="orb-title">{m.title}</div>
-  {/* <div className="orb-desc">{m.desc}</div> */}
-</div>
+
+                <div className="orb-text">
+                  <div className="orb-title">{m.title}</div>
+                  {/* <div className="orb-desc">{m.desc}</div> */}
+                </div>
 
                 <span className="orb-ring" aria-hidden="true" />
               </motion.button>
@@ -148,35 +161,34 @@ const quickRef = useRef(null);              // ref to attach emitter when modal 
               </motion.div>
 
               <motion.div className="grid" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
-              {(showAllForMood ? filtered : filtered.slice(0, 4)).map((p, i) => (
-  <motion.article
-    key={p.id}
-    className="product-card-mini"
-    initial={{ opacity: 0, y: 12 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.2 + i * 0.06 }}
-    whileHover={{ translateY: -6 }}
-    onMouseEnter={() => { setHoveredBottleId(p.id); hoveredRef.current = document.getElementById(`bottle-${p.id}`); }}
-    onMouseLeave={() => { setHoveredBottleId(null); hoveredRef.current = null; }}
-  >
-    <div className="pcm-media">
-      <img id={`bottle-${p.id}`} src={p.image || "/smoke-fallback.jpg"} alt={p.name} loading="lazy" style={{ maxHeight: 72, maxWidth: 72 }} />
-    </div>
+                {(showAllForMood ? filtered : filtered.slice(0, 4)).map((p, i) => (
+                  <motion.article
+                    key={p.id}
+                    className="product-card-mini"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + i * 0.06 }}
+                    whileHover={{ translateY: -6 }}
+                    onMouseEnter={() => { setHoveredBottleId(p.id); hoveredRef.current = document.getElementById(`bottle-${p.id}`); }}
+                    onMouseLeave={() => { setHoveredBottleId(null); hoveredRef.current = null; }}
+                  >
+                    <div className="pcm-media">
+                      <img id={`bottle-${p.id}`} src={p.imageUrl || "/smoke-fallback.jpg"} alt={p.name} loading="lazy" style={{ maxHeight: 72, maxWidth: 72 }} />
+                    </div>
 
-    <div className="pcm-body">
-      <h4>{p.name}</h4>
-      <div className="muted small">{p.description}</div>
-      <div className="pcm-foot">
-        <div className="price">{formatPrice(p.price)}</div>
-        <div>
-          <button className="btn small ghost" onClick={() => setQuickProduct(p)}>Quick view</button>
-          <button className="btn small primary" onClick={() => onAddToCart(p)}>Add</button>
-        </div>
-      </div>
-    </div>
-  </motion.article>
-))}
-
+                    <div className="pcm-body">
+                      <h4>{p.name}</h4>
+                      <div className="muted small">{p.description}</div>
+                      <div className="pcm-foot">
+                        <div className="price">{formatPrice(p.price)}</div>
+                        <div>
+                          <button className="btn small ghost" onClick={() => setQuickProduct(p)}>Quick view</button>
+                          <button className="btn small primary" onClick={() => onAddToCart(p)}>Add</button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.article>
+                ))}
               </motion.div>
 
               {(!showAllForMood && filtered.length > 4) && (
@@ -195,42 +207,40 @@ const quickRef = useRef(null);              // ref to attach emitter when modal 
         </div>
       </div>
 
-      {/* Attach the scent emitter to the active orb */}
       {/* Bottle-hover emitter (emits from hovered bottle element) */}
-{hoveredBottleId && hoveredRef.current && (
-  <ScentEmitter
-    targetRef={{ current: hoveredRef.current }}
-    colors={MOODS.find((m) => m.id === activeMood)?.color || ["rgba(200,110,220,0.95)"]}
-    enabled={true}
-    density={18}
-    size={[4, 20]}
-    drift={{ x: 0.04, y: -0.22 }}
-  />
-)}
+      {hoveredBottleId && hoveredRef.current && (
+        <ScentEmitter
+          targetRef={{ current: hoveredRef.current }}
+          colors={MOODS.find((m) => m.id === activeMood)?.color || ["rgba(200,110,220,0.95)"]}
+          enabled={true}
+          density={18}
+          size={[4, 20]}
+          drift={{ x: 0.04, y: -0.22 }}
+        />
+      )}
 
-{/* Quick view modal */}
-{quickProduct && (
-  <>
-    <QuickView
-      product={quickProduct}
-      onClose={() => setQuickProduct(null)}
-      onAddToCart={(p) => { onAddToCart(p); }}
-      emitterRef={quickRef}
-    />
-    {/* Emitter behind modal bottle */}
-    {quickRef && quickRef.current && (
-      <ScentEmitter
-        targetRef={quickRef}
-        colors={["rgba(246,192,232,0.95)", "rgba(200,110,220,0.9)"]}
-        enabled={true}
-        density={28}
-        size={[8, 36]}
-        drift={{ x: 0.02, y: -0.28 }}
-      />
-    )}
-  </>
-)}
-
+      {/* Quick view modal */}
+      {quickProduct && (
+        <>
+          <QuickView
+            product={quickProduct}
+            onClose={() => setQuickProduct(null)}
+            onAddToCart={(p) => { onAddToCart(p); }}
+            emitterRef={quickRef}
+          />
+          {/* Emitter behind modal bottle */}
+          {quickRef && quickRef.current && (
+            <ScentEmitter
+              targetRef={quickRef}
+              colors={["rgba(246,192,232,0.95)", "rgba(200,110,220,0.9)"]}
+              enabled={true}
+              density={28}
+              size={[8, 36]}
+              drift={{ x: 0.02, y: -0.28 }}
+            />
+          )}
+        </>
+      )}
     </section>
   );
 }

@@ -1,0 +1,33 @@
+
+:root{
+  --brand:#a63b8f; /* perfume-accent — change to match EssenceAura */
+  --dark:#2b2f37;
+  --muted:#eef2f6;
+  --card:#fff;
+  --shadow:0 6px 18px rgba(11,12,14,0.06);
+}
+
+.adminDash-wrap{ max-width:1300px; margin:20px auto; padding:16px; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--dark); }
+.adminDash-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--card); border:1px solid var(--muted); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
+.adminDash-header h1{ margin:0; }
+.adminDash-actions{ display:flex; gap:10px; }
+.admin-btn{ background:var(--brand); color:#fff; border:1px solid transparent; border-radius:10px; font-weight:800; padding:10px 14px; cursor:pointer; box-shadow:0 8px 18px rgba(166,59,143,0.12); }
+.admin-btn.ghost{ background:transparent; color:var(--brand); border:1px solid rgba(166,59,143,0.12); box-shadow:none; }
+.adminDash-error{ margin:12px 0; padding:10px 12px; background:#fff1f7; color:#8f184b; border:1px solid #ffd9ee; border-radius:10px; }
+
+.adminDash-kpis{ margin:16px 0; display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+.kpi{ background:var(--card); border:1px solid var(--muted); border-radius:12px; padding:16px; box-shadow:var(--shadow); }
+.kpi-label{ color:#6c757d; font-weight:700; }
+.kpi-value{ font-size:1.6rem; font-weight:900; color:var(--dark); }
+
+.adminDash-quick{ margin:18px 0; display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.tile{ background:var(--card); border:1px solid var(--muted); border-radius:14px; padding:16px; box-shadow:var(--shadow); text-align:left; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease; }
+.tile:hover{ transform:translateY(-3px); box-shadow:0 14px 30px rgba(11,12,14,0.08); }
+.tile-ico{ font-size:26px; }
+.tile-title{ font-size:1.05rem; font-weight:900; color:var(--dark); margin-top:6px; }
+.tile-sub{ color:#6c757d; font-weight:600; }
+
+.adminDash-card{ background:var(--card); border:1px solid var(--muted); border-radius:12px; padding:16px; box-shadow:var(--shadow); }
+.admin-steps{ margin:8px 0 0; line-height:1.6; color:var(--dark); }
+
+@media (max-width:768px){ .adminDash-header{ align-items:flex-start; flex-direction:column; } .adminDash-actions{ width:100%; } }

@@ -1,0 +1,440 @@
+/* src/styles/checkout.css
+   Checkout, Order Confirmation & Orders (history) styles
+   - Extended to support Firestore-backed order list UI
+   - Mobile-first, sticky summary on desktop
+   - Perfume-themed glass + purple/pink accents
+*/
+
+/* ---------------- theme variables ---------------- */
+:root{
+  --bg-900: #06060a;
+  --bg-800: #0a0a0c;
+  --muted: #9aa0a6;
+  --text: #eef0f6;
+  --card: rgba(255,255,255,0.02);
+  --card-2: rgba(255,255,255,0.03);
+  --border: rgba(255,255,255,0.04);
+  --accent1: #ff4fa1;
+  --accent2: #7b47ff;
+  --success: #22c55e;
+  --danger: #ff6b6b;
+  --radius: 12px;
+  --shadow-strong: 0 10px 32px rgba(8,8,12,0.45);
+  --max-content-width: 1100px;
+}
+
+/* ---------------- page baseline ---------------- */
+.checkout {
+  color: var(--text);
+  padding: 20px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--bg-900), var(--bg-800));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* header */
+.checkout h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.checkout .lead {
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+/* ---------------- layout grid ---------------- */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+/* form card / summary card */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow-strong);
+}
+
+/* section headings */
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.card p.muted { color: var(--muted); font-size: 13px; margin: 6px 0 12px; }
+
+/* ---------------- form controls ---------------- */
+.checkout-form label { display: block; margin-bottom: 10px; font-size: 13px; }
+.checkout-form .label { display:block; margin-bottom:6px; font-weight:600; color:var(--text); }
+.checkout-form input[type="text"],
+.checkout-form input[type="email"],
+.checkout-form input[type="number"],
+.checkout-form input[type="tel"],
+.checkout-form select,
+.checkout-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+  font-size: 14px;
+  transition: box-shadow .15s ease, border-color .15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* placeholder color */
+.checkout-form input::placeholder { color: rgba(255,255,255,0.35); }
+
+/* focus state */
+.checkout-form input:focus,
+.checkout-form select:focus,
+.checkout-form textarea:focus {
+  outline: none;
+  border-color: rgba(123,71,255,0.9);
+  box-shadow: 0 6px 24px rgba(123,71,255,0.10);
+}
+
+/* help text / muted */
+.muted { color: var(--muted); font-size: 13px; }
+
+/* two-column groups */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* shipping / payment rows */
+.shipping-row,
+.payment-row {
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+.shipping-row label,
+.payment-row label {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  cursor:pointer;
+  font-size:14px;
+}
+
+/* radio inputs sizing */
+.checkout-form input[type="radio"],
+.checkout-form input[type="checkbox"] {
+  width:18px; height:18px;
+}
+
+/* card-fields small inputs */
+.card-fields .two-col input { padding:10px 12px; }
+
+/* ---------------- error styles ---------------- */
+.error { color: var(--danger); font-size: 13px; margin-top: 6px; }
+
+/* ---------------- progress / breadcrumbs ---------------- */
+.checkout-progress {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin: 10px 0 8px;
+}
+.step {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:13px;
+  color: var(--muted);
+}
+.step .dot {
+  width:10px; height:10px; border-radius:50%;
+  background: rgba(255,255,255,0.06);
+}
+.step.active { color: var(--text); font-weight:700; }
+.step.active .dot { background: linear-gradient(90deg, var(--accent1), var(--accent2)); box-shadow: 0 6px 20px rgba(123,71,255,0.12); }
+
+/* ---------------- order summary ---------------- */
+.order-summary {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* sticky on large screens */
+@media (min-width: 901px) {
+  .checkout-grid {
+    grid-template-columns: 1fr 360px;
+    align-items:start;
+  }
+  .order-summary { position: sticky; top: 20px; align-self: start; }
+}
+
+/* summary items list */
+.summary-items {
+  max-height: 420px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding-right:6px;
+}
+.summary-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.s-left { display:flex; gap:12px; align-items:center; min-width:0; }
+.s-left img { width:54px; height:54px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+.s-name { font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); }
+.s-meta { color:var(--muted); font-size:13px; }
+
+/* right side price */
+.s-right { font-weight:700; color:var(--text); min-width:80px; text-align:right; font-size:14px; }
+
+/* summary totals */
+.summary-line { display:flex; justify-content:space-between; padding:10px 0; border-top:1px solid rgba(255,255,255,0.02); }
+.summary-line.total { font-weight:800; font-size:18px; color:var(--text); }
+
+/* compact totals row */
+.totals-compact { display:flex; gap:10px; align-items:center; justify-content:space-between; }
+
+/* CTA buttons */
+.actions-row {
+  display:flex;
+  gap:12px;
+  margin-top:6px;
+}
+.btn {
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+  border: none;
+  font-size:14px;
+}
+.btn.primary {
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color:#fff;
+  box-shadow: 0 10px 28px rgba(123,71,255,0.14);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* subtle link-like button */
+.btn.link {
+  background:transparent; color:var(--accent2); border:none; padding:6px 8px; font-weight:700;
+}
+
+/* ---------------- order confirmation styles ---------------- */
+.conf-card {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  align-items:flex-start;
+}
+.conf-card h1 { font-size:22px; margin:0 0 6px; }
+.conf-card p.muted { color:var(--muted); }
+
+/* order detail cards */
+.conf-card .card { width:100%; }
+
+/* small info chips */
+.chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.chips .chip { font-size:13px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.02); color:var(--muted); border:1px solid rgba(255,255,255,0.03); }
+
+/* ---------------- Orders (user order history) ---------------- */
+/* container for orders list */
+.orders-list {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top: 14px;
+}
+
+/* single order row */
+.order-row {
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border-radius:10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));
+  border: 1px solid rgba(255,255,255,0.02);
+}
+.order-row .left {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width: 0;
+}
+.order-row .left img {
+  width:56px;
+  height:56px;
+  object-fit:cover;
+  border-radius:8px;
+}
+.order-row .meta {
+  min-width: 0;
+}
+.order-row .meta .title {
+  font-weight:700;
+  font-size:15px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.order-row .meta .sub {
+  color:var(--muted);
+  font-size:13px;
+}
+.order-row .right {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:120px;
+  justify-content:flex-end;
+}
+.order-row .order-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  color:var(--muted);
+  font-size:12px;
+  letter-spacing:0.04em;
+}
+
+/* status badges */
+.badge {
+  padding:6px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:12px;
+  color:#fff;
+}
+.badge.pending { background: linear-gradient(90deg,#f59e0b,#f97316); } /* amber */
+.badge.authorized { background: linear-gradient(90deg,#10b981,#06b6d4); } /* green/teal */
+.badge.delivered { background: linear-gradient(90deg,#22c55e,#16a34a); }
+.badge.cancelled { background: linear-gradient(90deg,#ef4444,#f97316); }
+
+/* order detail page */
+.order-details {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.order-details .items {
+  border-top:1px solid rgba(255,255,255,0.02);
+  padding-top:10px;
+}
+.order-details .items .item {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.02);
+}
+.order-details .items .item img {
+  width:56px; height:56px; object-fit:cover; border-radius:8px;
+}
+
+/* small order meta */
+.order-meta {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:13px;
+}
+
+/* ---------------- responsive & accessibility ---------------- */
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .checkout { padding: 16px 12px; }
+  .card { padding: 14px; border-radius: 10px; }
+  .checkout h1 { font-size:22px; }
+  .s-left img { width:46px; height:46px; }
+  .summary-items { max-height: 260px; }
+  .actions-row { flex-direction:column; gap:8px; }
+  .btn.primary { width:100%; display:block; }
+  .btn.ghost { width:100%; display:block; }
+  .order-row { flex-direction: column; align-items: flex-start; gap:8px; padding:10px; }
+  .order-row .right { width:100%; justify-content: space-between; }
+}
+
+/* ---------------- loading skeletons & toasts ---------------- */
+/* skeleton element for loading lists */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border-radius: 8px;
+  height: 14px;
+  width: 100%;
+  opacity: 0.6;
+  animation: shimmer 1.4s infinite linear;
+}
+.skeleton-row { display:flex; gap:12px; align-items:center; padding:10px 0; }
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+/* minimal toast container (you can wire this in JS) */
+.toast-container {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.toast {
+  background: rgba(0,0,0,0.8);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  min-width: 220px;
+}
+
+/* ---------------- focus & input accessibility ---------------- */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid rgba(123,71,255,0.12);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* reduce motion for prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------- small helpers ---------------- */
+.small { font-size:13px; }
+.bold { font-weight:700; }
+
+/* utility to keep the summary visually separate on mobile */
+.order-summary .card { padding-bottom: 14px; }
+
+/* final spacing */
+.checkout .empty { text-align:center; padding: 36px 12px; color:var(--muted); font-size:16px; }

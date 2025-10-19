@@ -44,7 +44,7 @@ export default function AdminProducts() {
             : null;
             
           // Prioritize the 50ml price from the new 'prices' array,
-          // then fall back to the old 'p.price' field
+          // then fall back to the old 'p.price' field (which we are now setting as the 50ml price anyway)
           const mainPriceInCents = priceObj50ml ? priceObj50ml.price : p.price;
 
           const formattedPrice = mainPriceInCents

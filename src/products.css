@@ -1,22 +1,32 @@
 /* src/styles/products.css */
+
+/* ---------- Theme variables ---------- */
 :root {
   --muted: #a0a0a6;
-  --accent1: #d63384;
-  --accent2: #6f42c1;
+  --accent1: #d63384; /* pink */
+  --accent2: #6f42c1; /* purple */
+  --bg-start: #0a0a0c;
+  --bg-end: #111;
+  --card-glass: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --glass-strong: rgba(255,255,255,0.08);
 }
 
-/* basic container width */
+/* ---------- Basic layout ---------- */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #fff; background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%); }
+
 .container {
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* hero */
+/* ---------- Hero ---------- */
 .products-hero {
   padding: 48px 0 24px;
   color: white;
-  background: linear-gradient(180deg, #0a0a0c 0%, #111 100%);
+  background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
   text-align: left;
 }
 
@@ -32,7 +42,7 @@
   margin-top: 6px;
 }
 
-/* controls row */
+/* ---------- Controls row ---------- */
 .products-controls {
   display: flex;
   gap: 12px;
@@ -65,7 +75,7 @@
   margin-left: 8px;
 }
 
-/* grid */
+/* ---------- Product grid ---------- */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -73,20 +83,22 @@
   padding: 32px 20px 40px;
 }
 
+/* ---------- Product card ---------- */
 .product-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.08));
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
   padding: 14px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 420px;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(111, 66, 193, 0.2);
+  box-shadow: 0 8px 24px rgba(111, 66, 193, 0.18);
 }
 
 .pc-media {
@@ -116,7 +128,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(214, 51, 132, 0.2);
+  background: rgba(214, 51, 132, 0.12);
   color: var(--accent1);
   padding: 5px 10px;
   border-radius: 8px;
@@ -124,6 +136,7 @@
   font-size: 12px;
 }
 
+/* ---------- Card body ---------- */
 .pc-body {
   padding: 14px 6px 0;
   display: flex;
@@ -135,6 +148,12 @@
   margin: 0;
   color: #fff;
   font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pc-body .muted {
@@ -142,22 +161,108 @@
   font-size: 13px;
 }
 
+/* clamp description to 2 lines */
+.pc-body .muted.small {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* ---------- Footer row: price, select, actions ---------- */
 .pc-foot {
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* Left group: select + price */
+.pc-foot > .left-group,
+.pc-foot > div:first-child {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Actions group on the right */
+.pc-foot .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* ---------- Volume & price dropdown ---------- */
+.pc-foot select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  appearance: none;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  max-width: 160px;
+  min-width: 100px;
+  width: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 36px; /* room for arrow */
+}
+
+/* custom arrow via background images */
+.pc-foot select {
+  background-image: linear-gradient(45deg, transparent 50%, #fff 50%),
+                    linear-gradient(135deg, #fff 50%, transparent 50%),
+                    linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.02));
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px), 100% 0;
+  background-size: 6px 6px, 6px 6px, 1px 1.5em;
+  background-repeat: no-repeat;
+}
+
+/* hover & focus states */
+.pc-foot select:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.pc-foot select:focus {
+  border-color: var(--accent2);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.25);
+}
+
+/* options inside the native menu (appearance limited by browser) */
+.pc-foot option {
+  background: #0a0a0c;
+  color: #fff;
+  font-size: 14px;
+  padding: 6px;
+}
+
+/* Price text */
 .price {
   font-weight: 700;
   color: #fff;
   font-size: 15px;
+  margin-left: 8px;
+  white-space: nowrap;
 }
 
-/* buttons */
+/* ---------- Buttons ---------- */
 .btn {
   border: none;
   padding: 8px 14px;
@@ -180,10 +285,16 @@
   color: #fff;
 }
 
-.btn:hover {
-  transform: translateY(-1px);
+.btn:hover { transform: translateY(-1px); }
+
+/* small variants for product card */
+.product-card .btn.small {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 999px;
 }
 
+/* actions row below grid */
 .actions-row {
   padding: 18px 20px 60px;
   display: flex;
@@ -192,18 +303,136 @@
   gap: 14px;
 }
 
-/* empty */
+/* empty state */
 .empty {
   padding: 28px;
   text-align: center;
   color: var(--muted);
 }
 
-/* responsive */
+/* ---------- Footer layout / overflow fixes ---------- */
+/* Ensure left group and actions behave predictably when space is limited */
+.pc-foot {
+  flex-wrap: nowrap;
+}
+
+/* allow wrapping on smaller screens to avoid overflow */
 @media (max-width: 900px) {
-  .products-controls {
+  .pc-foot {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .pc-foot > .left-group,
+  .pc-foot > div:first-child {
+    flex: 1 1 60%;
+    min-width: 0;
+  }
+  .pc-foot .actions {
+    flex: 1 1 36%;
+    justify-content: flex-end;
+  }
+}
+
+/* Select arrow accessibility tweak for IE/Edge */
+.pc-foot select::-ms-expand { display: none; }
+
+/* ---------- Responsive grid: ensure 2x2 on mobile ---------- */
+@media (max-width: 640px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns so 4 items visible as 2x2 */
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .product-card {
+    padding: 10px;
+    border-radius: 10px;
+    min-height: 360px;
+  }
+
+  .pc-media { height: 160px; border-radius: 10px; }
+  .pc-body h3 { font-size: 16px; }
+  .pc-body .muted.small { font-size: 12px; }
+  .pc-foot select { max-width: 120px; min-width: 90px; font-size: 13px; padding: 6px 10px; }
+  .pc-foot .price { font-size: 14px; }
+  .product-card .actions .btn { padding: 6px 10px; font-size: 13px; }
+  .pc-body { min-height: 120px; }
+}
+
+/* tablet layout tweaks (slightly wider) */
+@media (min-width: 641px) and (max-width: 900px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  .product-card { min-height: 380px; }
+}
+
+/* larger screens: optionally constrain columns */
+@media (min-width: 1100px) {
+  .products-grid { gap: 28px; }
+}
+
+/* ---------- Accessibility / UX niceties ---------- */
+/* Make select arrow area a bit more visible on dark background */
+.pc-foot select {
+  background-clip: padding-box;
+}
+
+/* Focus ring for interactive elements */
+button:focus,
+input:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.06);
+}
+
+/* small utility classes used elsewhere */
+.muted { color: var(--muted); }
+.bold { font-weight: 700; }
+.small { font-size: 13px; }
+
+/* ---------- End of file ---------- */
+/* ----- View Button below Add button ----- */
+.pc-foot .actions.vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 140px;
+}
+
+/* make Add button stand out */
+.pc-foot .actions.vertical .btn.primary {
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(111, 66, 193, 0.25);
+}
+
+/* make View button subtle but visible */
+.pc-foot .actions.vertical .btn.view-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.pc-foot .actions.vertical .btn.view-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* On mobile, stretch buttons for easier tapping */
+@media (max-width: 640px) {
+  .pc-foot .actions.vertical {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    width: 100%;
+    max-width: none;
+    gap: 6px;
+  }
+  .pc-foot .actions.vertical .btn {
+    width: 100%;
   }
 }

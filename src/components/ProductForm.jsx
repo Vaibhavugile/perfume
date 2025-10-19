@@ -8,7 +8,6 @@ import {
 import "../styles/productForm.css";
 
 // Helper function to safely extract a price for a specific volume from the 'prices' array
-// This function is defined here, local to ProductForm, which fixes the import error.
 const getPriceForVolume = (product, volume) => {
   // 1. Check the new 'prices' array
   const priceObj = product?.prices?.find((p) => p.volume === volume);
@@ -80,7 +79,7 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
         },
       ].filter((p) => p.price > 0); // Only save volumes with a price
 
-      // Set the 50ml price as the main 'price' for easy display/sorting, as requested
+      // Set the 50ml price as the main 'price' for easy display/sorting
       const mainPrice = pricesData.find((p) => p.volume === "50ml")?.price || 0;
       // --------------------------------------
 

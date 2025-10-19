@@ -1,0 +1,284 @@
+/* src/styles/login.css
+   Perfume-themed login page
+   - Mobile-first, responsive
+   - Subtle animations: smoke, card fade-in, buttons
+   - Accessible focus and large tap targets
+*/
+
+/* ---------- Theme variables ---------- */
+:root{
+  --bg-900: #06060a;
+  --bg-800: #0b0b0e;
+  --muted: #9aa0a6;
+  --text: #f5f7fb;
+  --accent1: #ff4fa1; /* pink */
+  --accent2: #7b47ff; /* purple */
+  --glass: rgba(255,255,255,0.02);
+  --border: rgba(255,255,255,0.04);
+  --card-radius: 14px;
+  --card-padding: 20px;
+  --transition-fast: 160ms;
+  --transition-medium: 260ms;
+}
+
+/* ---------- Page & background atmosphere ---------- */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(123,71,255,0.06), transparent 6%),
+              radial-gradient(1000px 600px at 90% 80%, rgba(255,79,161,0.03), transparent 8%),
+              linear-gradient(180deg, var(--bg-900), var(--bg-800));
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Decorative floating bottle silhouette (pure CSS) */
+.login-page::before {
+  content: "";
+  position: absolute;
+  right: -6%;
+  top: -6%;
+  width: 50vmin;
+  height: 50vmin;
+  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.02), transparent 6%),
+                    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><g fill="%23ffffff" fill-opacity="0.02"><path d="M100 10c20 0 36 16 36 36s-16 36-36 36-36-16-36-36 16-36 36-36z"/></g></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transform: rotate(-12deg);
+  opacity: 0.9;
+  filter: blur(12px) saturate(120%);
+  pointer-events: none;
+}
+
+/* very soft moving smoke layers */
+@keyframes float-slow {
+  from { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+  50% { transform: translateY(-8px) translateX(6px) scale(1.02); opacity: 1; }
+  to { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+}
+.login-page::after {
+  content: "";
+  position: absolute;
+  left: -8%;
+  bottom: -8%;
+  width: 60vmin;
+  height: 60vmin;
+  background: radial-gradient(circle at 50% 40%, rgba(123,71,255,0.03), transparent 12%),
+              radial-gradient(circle at 30% 70%, rgba(255,79,161,0.02), transparent 12%);
+  filter: blur(28px);
+  opacity: 0.9;
+  animation: float-slow 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ---------- Layout / card ---------- */
+.container { width: 100%; max-width: 1100px; margin: 0 auto; }
+
+.login-card {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 18px;
+  align-items: start;
+  width: 100%;
+  max-width: 980px;
+  z-index: 2;
+  animation: cardEnter var(--transition-medium) ease;
+}
+
+/* entrance */
+@keyframes cardEnter {
+  from { transform: translateY(6px); opacity: 0; filter: blur(4px); }
+  to { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+/* left column: form */
+.login-left {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 40px rgba(10,10,14,0.45);
+  backdrop-filter: blur(4px);
+}
+
+/* small brand header */
+.brand h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.brand .muted { color: var(--muted); margin-bottom: 12px; font-size: 14px; }
+
+/* Google button (animated accent) */
+.btn.google {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(10,10,16,0.08);
+  transform-origin: center;
+  transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  overflow: visible;
+}
+.btn.google:active { transform: translateY(1px); }
+.btn.google .icon { width: 18px; height: 18px; display:block; }
+
+/* a small animated perfume mist under the Google button */
+.btn.google::after {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(123,71,255,0.18), rgba(255,79,161,0.18));
+  border-radius: 999px;
+  margin-left: 8px;
+  opacity: 0.0;
+  transform-origin: left center;
+  transition: opacity var(--transition-medium) ease, transform var(--transition-medium) ease;
+}
+.btn.google:hover::after { opacity: 1; transform: translateX(6px) scaleX(1.06); }
+
+/* divider */
+.or { text-align:center; margin: 14px 0; color: var(--muted); font-size: 13px; }
+
+/* form inputs */
+.auth-form label { display:block; margin-bottom: 10px; }
+.label { display:block; margin-bottom:6px; font-weight:700; color:var(--text); font-size:13px; }
+.auth-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+  font-size: 14px;
+  transition: box-shadow var(--transition-fast) ease, transform var(--transition-fast) ease, border-color var(--transition-fast) ease;
+}
+
+/* subtle pop on focus */
+.auth-form input:focus {
+  outline: none;
+  transform: translateY(-1px);
+  border-color: rgba(123,71,255,0.9);
+  box-shadow: 0 10px 28px rgba(123,71,255,0.08);
+}
+
+/* actions */
+.auth-actions {
+  display:flex;
+  gap: 10px;
+  margin-top: 12px;
+  align-items:center;
+}
+.btn {
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+}
+.btn.primary {
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: white;
+  box-shadow: 0 10px 34px rgba(123,71,255,0.12);
+  transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+}
+.btn.primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(123,71,255,0.18); }
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* error */
+.error { color: #ffb4b4; margin-top: 8px; font-size: 13px; }
+
+/* right column: promo / perfume imagery */
+.login-right {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.promo {
+  width: 100%;
+  padding: 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));
+  border: 1px solid rgba(255,255,255,0.02);
+  box-shadow: 0 10px 28px rgba(8,8,12,0.28);
+  color: var(--text);
+}
+
+/* promo heading and small copy */
+.promo h3 { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
+.promo .muted { color: var(--muted); font-size: 13px; }
+
+/* perfume-themed chips */
+.chips { display:flex; gap:8px; margin-top: 12px; flex-wrap:wrap; }
+.chip {
+  background: linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid rgba(255,255,255,0.02);
+}
+
+/* ---------- Mobile responsive ---------- */
+@media (max-width: 880px) {
+  .login-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 6px;
+  }
+  .login-right { display: none; } /* hide promo on small */
+  .auth-actions { flex-direction: column-reverse; gap: 10px; width: 100%; }
+  .btn.primary, .btn.ghost, .btn.google { width: 100%; justify-content: center; }
+  .auth-form input { padding: 12px; font-size: 15px; }
+  .brand h2 { font-size: 20px; }
+}
+
+/* ---------- small niceties & accessibility ---------- */
+input::placeholder { color: rgba(255,255,255,0.35); }
+button:focus, input:focus { outline: 3px solid rgba(123,71,255,0.10); outline-offset: 2px; border-radius: 8px; }
+
+/* reduce motion if user prefers reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .login-page::after, .login-page::before, .login-card, .btn.google::after { animation: none; transition: none; }
+}
+
+/* ---------- Optional utility: subtle floating scent particles ----------
+   If you want more of a perfume feel, add <span class="scent"></span> elements
+   inside .login-page and use the rules below. Not required.
+*/
+.scent {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,79,161,0.9), rgba(123,71,255,0.65));
+  opacity: 0.06;
+  filter: blur(6px);
+  animation: scentFloat 8s linear infinite;
+  pointer-events: none;
+}
+@keyframes scentFloat {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.04; }
+  50% { transform: translateY(-40px) translateX(20px) scale(1.4); opacity: 0.14; }
+  100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.04; }
+}

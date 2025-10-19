@@ -32,3 +32,22 @@
   .qv-left, .qv-right { width:100%; }
   .qv-bottle { max-height: 260px; }
 }
+/* QuickView dropdown */
+.qv-right select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.qv-right select:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+}

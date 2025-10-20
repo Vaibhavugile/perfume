@@ -1,6 +1,5 @@
-// src/FeaturedSection.jsx
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./featured.css";
 import { getFeaturedProductsRealtime, formatPrice } from "./services/productsService";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +10,10 @@ import { useCart } from "./contexts/CartContext";
  * - shows up to 3 featured products
  * - useCart() for adding to cart
  * - navigate to product detail for quick view / image click
+ *
+ * Each featured card now supports multiple images (product.images array) and
+ * automatically animates between them with Framer Motion. Hovering a card pauses
+ * autoplay. Thumbnails allow manual selection.
  */
 export default function FeaturedSection() {
   const [featured, setFeatured] = useState([]);
@@ -66,56 +69,13 @@ export default function FeaturedSection() {
           transition={{ delay: 0.44 }}
         >
           {displayed.map((p, i) => (
-            <motion.article
+            <FeaturedCard
               key={p.id}
-              className="featured-card"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + i * 0.12 }}
-              whileHover={{ translateY: -6 }}
-            >
-              <div
-                className="fc-media"
-                // click image to go to product detail
-                onClick={() => navigate(`/product/${p.id}`)}
-                style={{ cursor: "pointer" }}
-              >
-                <motion.img
-                  src={p.imageUrl || "/smoke-fallback.jpg"}
-                  alt={p.name}
-                  loading="lazy"
-                  className="fc-img"
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.35 }}
-                />
-                <div className="img-shimmer" aria-hidden="true" />
-              </div>
-
-              <div className="fc-body">
-                <h3>{p.name}</h3>
-                <p className="muted small">{p.description}</p>
-
-                <div className="fc-foot">
-                  <div className="price">{formatPrice(p.price)}</div>
-                  <div className="fc-actions">
-                    <button
-                      className="btn small ghost"
-                      onClick={() => navigate(`/product/${p.id}`)}
-                      aria-label={`View ${p.name}`}
-                    >
-                      View
-                    </button>
-
-                    <button
-                      className="btn small primary"
-                      onClick={() => addToCart(p, 1)}
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.article>
+              product={p}
+              index={i}
+              onView={() => navigate(`/product/${p.id}`)}
+              onAdd={() => addToCart(p, 1)}
+            />
           ))}
         </motion.div>
 
@@ -131,5 +91,105 @@ export default function FeaturedSection() {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+function FeaturedCard({ product, index = 0, onView = () => {}, onAdd = () => {} }) {
+  // images array (fallback to legacy single URL)
+  const imgs = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images
+    : product?.imageUrl ? [product.imageUrl] : ["/smoke-fallback.jpg"];
+
+  const [active, setActive] = useState(0);
+  const [isHover, setIsHover] = useState(false);
+  const timerRef = useRef(null);
+  const AUTOPLAY_MS = 3200;
+
+  useEffect(() => {
+    if (isHover) {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      return;
+    }
+
+    // start autoplay
+    if (!timerRef.current) {
+      timerRef.current = setInterval(() => {
+        setActive((a) => (a + 1) % imgs.length);
+      }, AUTOPLAY_MS);
+    }
+
+    return () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+  }, [imgs.length, isHover]);
+
+  const showAt = (i) => {
+    setActive(i % imgs.length);
+  };
+
+  const priceValue = (() => {
+    // if product.prices array exists, prefer showing the smallest volume price or first one
+    if (Array.isArray(product?.prices) && product.prices.length > 0) return product.prices[0].price;
+    return product?.price || 0;
+  })();
+
+  return (
+    <motion.article
+      className="featured-card"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 + index * 0.12 }}
+      whileHover={{ translateY: -6 }}
+      onMouseEnter={() => setIsHover(true)}
+      onMouseLeave={() => setIsHover(false)}
+    >
+      <div className="fc-media" style={{ cursor: "pointer" }} onClick={onView}>
+        <AnimatePresence initial={false} mode="wait">
+          <motion.img
+            key={`${product.id}-${active}`}
+            src={imgs[active]}
+            alt={`${product.name} - ${active + 1}`}
+            className="fc-img"
+            initial={{ opacity: 0, y: 8, scale: 1.03 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.55 }}
+            loading="lazy"
+          />
+        </AnimatePresence>
+        <div className="img-shimmer" aria-hidden="true" />
+
+        {imgs.length > 1 && (
+          <div className="thumb-row">
+            {imgs.slice(0, 5).map((src, idx) => (
+              <button
+                key={idx}
+                className={`thumb-btn ${active === idx ? "active" : ""}`}
+                onClick={(e) => { e.stopPropagation(); showAt(idx); }}
+                aria-label={`Show image ${idx + 1} for ${product.name}`}
+                style={{ backgroundImage: `url(${src})` }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="fc-body">
+        <h3>{product.name}</h3>
+        <p className="muted small">{product.description}</p>
+
+        <div className="fc-foot">
+          <div className="price">{formatPrice(priceValue)}</div>
+          <div className="fc-actions">
+            <button className="btn small ghost" onClick={onView} aria-label={`View ${product.name}`}>
+              View
+            </button>
+            <button className="btn small primary" onClick={onAdd}>
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.article>
   );
 }

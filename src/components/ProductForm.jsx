@@ -1,4 +1,4 @@
-// src/components/ProductForm.jsx
+// src/components/ProductForm.jsx (UPDATED)
 import React, { useEffect, useState } from "react";
 import {
   uploadImageFile,
@@ -7,50 +7,82 @@ import {
 } from "../services/productsService";
 import "../styles/productForm.css";
 
-// Helper function to safely extract a price for a specific volume from the 'prices' array
+// Helper to safely extract price for a volume
 const getPriceForVolume = (product, volume) => {
-  // 1. Check the new 'prices' array
   const priceObj = product?.prices?.find((p) => p.volume === volume);
-  if (priceObj) {
-    return (priceObj.price / 100).toFixed(2);
-  }
-  // 2. Fallback for the old single 'price' field (only for 50ml)
-  if (volume === "50ml" && product?.price) {
-    return (product.price / 100).toFixed(2);
-  }
+  if (priceObj) return (priceObj.price / 100).toFixed(2);
+  // fallback for legacy `price` (assume 50ml)
+  if (volume === "50ml" && product?.price) return (product.price / 100).toFixed(2);
   return "";
 };
 
 export default function ProductForm({ product = null, onSaved = () => {}, onCancel = () => {} }) {
+  // volumes we support in the UI — add more volumes here if you want
+  const volumes = ["50ml", "100ml"]; // extend this array to add more sizes
+
+  // initialize prices & purchasePrices based on incoming product
+  const initialPrices = {};
+  const initialPurchases = {};
+  volumes.forEach((v) => {
+    initialPrices[v] = getPriceForVolume(product, v);
+    // if product has `purchasePrices` array use it, else blank
+    const pObj = product?.purchasePrices?.find((p) => p.volume === v);
+    initialPurchases[v] = pObj ? (pObj.price / 100).toFixed(2) : "";
+  });
+
   const [formData, setFormData] = useState({
     name: product?.name || "",
-    // Initialize price fields using the helper function
-    price50ml: getPriceForVolume(product, "50ml"),
-    price100ml: getPriceForVolume(product, "100ml"),
+    // sale prices (string numbers)
+    ...initialPrices,
+    // purchase rates
+    ...Object.fromEntries(volumes.map((v) => [`purchase_${v}`, initialPurchases[v]])),
     featured: product?.featured || false,
     tags: (product?.tags || []).join(", "),
     description: product?.description || "",
     notes: (product?.notes || []).join(", "),
-    imageUrl: product?.imageUrl || "",
   });
 
-  const [imageFile, setImageFile] = useState(null);
+  // images: array of { file?, previewUrl, uploadedUrl }
+  const [images, setImages] = useState(() => {
+    if (!product?.images) return [];
+    return product.images.map((url) => ({ file: null, previewUrl: url, uploadedUrl: url }));
+  });
+
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (!imageFile) return;
-    const url = URL.createObjectURL(imageFile);
-    setFormData((prev) => ({ ...prev, imageUrl: url }));
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
+    // revoke object URLs when component unmounts
+    return () => {
+      images.forEach((img) => {
+        if (img.previewUrl && img.file) URL.revokeObjectURL(img.previewUrl);
+      });
+    };
+  }, [images]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  // when user selects multiple files
+  const handleFiles = (fileList) => {
+    const files = Array.from(fileList || []);
+    const newImgs = files.map((f) => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+      uploadedUrl: null,
     }));
+    setImages((prev) => [...prev, ...newImgs]);
+  };
+
+  const removeImageAt = (index) => {
+    setImages((prev) => {
+      const next = [...prev];
+      const removed = next.splice(index, 1)[0];
+      if (removed?.file && removed.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -58,42 +90,57 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
     setUploading(true);
 
     try {
-      let imageUrl = formData.imageUrl;
+      // 1. upload new image files sequentially (could be parallel but sequential keeps progress simpler)
+      const uploadedUrls = [];
+      let filesToUpload = images.filter((img) => img.file && !img.uploadedUrl);
+      let uploadedCount = 0;
 
-      if (imageFile) {
-        const { url } = await uploadImageFile(imageFile, null, (p) =>
-          setProgress(p)
-        );
-        imageUrl = url;
+      for (const img of images) {
+        if (img.uploadedUrl) {
+          uploadedUrls.push(img.uploadedUrl);
+          continue;
+        }
+        if (!img.file) continue;
+
+        // uploadImageFile(file, meta, onProgress) => { url }
+        const { url } = await uploadImageFile(img.file, null, (p) => {
+          // approximate progress across all files
+          const singleFilePercent = Math.round(p || 0);
+          const totalFiles = images.length || 1;
+          const overall = Math.round(((uploadedCount + singleFilePercent / 100) / totalFiles) * 100);
+          setProgress(overall);
+        });
+
+        uploadedUrls.push(url);
+        uploadedCount += 1;
       }
 
-      // --- NEW PRICE ARRAY CREATION LOGIC ---
-      const pricesData = [
-        {
-          volume: "50ml",
-          price: Math.round(parseFloat(formData.price50ml || 0) * 100),
-        },
-        {
-          volume: "100ml",
-          price: Math.round(parseFloat(formData.price100ml || 0) * 100),
-        },
-      ].filter((p) => p.price > 0); // Only save volumes with a price
+      // include already uploaded urls (if any)
+      const finalImageUrls = images.map((img, idx) => img.uploadedUrl || uploadedUrls.shift()).filter(Boolean);
 
-      // Set the 50ml price as the main 'price' for easy display/sorting
+      // 2. build prices array from sale price fields
+      const pricesData = volumes
+        .map((v) => ({ volume: v, price: Math.round(parseFloat(formData[v] || 0) * 100) }))
+        .filter((p) => p.price > 0);
+
+      // 3. build purchasePrices array from purchase_* fields
+      const purchasePricesData = volumes
+        .map((v) => ({ volume: v, price: Math.round(parseFloat(formData[`purchase_${v}`] || 0) * 100) }))
+        .filter((p) => p.price > 0);
+
+      // pick mainPrice (50ml) for backwards compatibility
       const mainPrice = pricesData.find((p) => p.volume === "50ml")?.price || 0;
-      // --------------------------------------
 
       const payload = {
         name: formData.name,
-        // Save the main 50ml price here
-        price: mainPrice, 
-        // Save the array of all prices
+        price: mainPrice,
         prices: pricesData,
+        purchasePrices: purchasePricesData,
         featured: !!formData.featured,
         tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
         description: formData.description,
         notes: formData.notes.split(",").map((n) => n.trim()).filter(Boolean),
-        imageUrl,
+        images: finalImageUrls,
       };
 
       if (product?.id) {
@@ -104,10 +151,11 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
 
       alert("✅ Product saved successfully!");
       setUploading(false);
+      setProgress(0);
       onSaved();
     } catch (err) {
       console.error(err);
-      alert("❌ Error saving product: " + err.message);
+      alert("❌ Error saving product: " + (err.message || err));
       setUploading(false);
     }
   };
@@ -118,96 +166,69 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
 
       <label>
         Name
-        <input
-          required
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Enter perfume name"
-        />
+        <input required name="name" value={formData.name} onChange={handleChange} placeholder="Enter product name" />
       </label>
 
-      {/* --- NEW PRICE INPUTS --- */}
-      <div className="price-inputs-group" style={{ display: 'flex', gap: '10px' }}>
-        <label>
-          Price - 50ml (₹)
-          <input
-            required
-            type="number"
-            step="0.01"
-            name="price50ml"
-            value={formData.price50ml}
-            onChange={handleChange}
-            placeholder="499.00"
-          />
-        </label>
-        <label>
-          Price - 100ml (₹)
-          <input
-            type="number"
-            step="0.01"
-            name="price100ml"
-            value={formData.price100ml}
-            onChange={handleChange}
-            placeholder="899.00"
-          />
-        </label>
+      {/* Price inputs for every supported volume */}
+      <div className="price-inputs-group" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        {volumes.map((v) => (
+          <label key={v} style={{ minWidth: 160 }}>
+            Price - {v} (₹)
+            <input required={v === "50ml"} type="number" step="0.01" name={v} value={formData[v] || ""} onChange={handleChange} placeholder="0.00" />
+          </label>
+        ))}
       </div>
-      {/* ------------------------ */}
+
+      {/* Purchase rate inputs for every supported volume */}
+      <div className="price-inputs-group" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        {volumes.map((v) => (
+          <label key={"p_" + v} style={{ minWidth: 160 }}>
+            Purchase - {v} (₹)
+            <input type="number" step="0.01" name={`purchase_${v}`} value={formData[`purchase_${v}`] || ""} onChange={handleChange} placeholder="0.00" />
+          </label>
+        ))}
+      </div>
 
       <label className="checkbox-field">
-        <input
-          type="checkbox"
-          name="featured"
-          checked={formData.featured}
-          onChange={handleChange}
-        />
+        <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />
         <span>Featured Product</span>
       </label>
 
       <label>
         Tags (comma separated)
-        <input
-          name="tags"
-          value={formData.tags}
-          onChange={handleChange}
-          placeholder="floral, oud, romantic"
-        />
+        <input name="tags" value={formData.tags} onChange={handleChange} placeholder="floral, oud, romantic" />
       </label>
 
       <label>
         Description
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows="3"
-          placeholder="Short product description"
-        />
+        <textarea name="description" value={formData.description} onChange={handleChange} rows="3" placeholder="Short product description" />
       </label>
 
       <label>
         Notes (comma separated)
-        <input
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          placeholder="Top: Rose, Heart: Oud, Base: Amber"
-        />
+        <input name="notes" value={formData.notes} onChange={handleChange} placeholder="Top: Rose, Heart: Oud, Base: Amber" />
       </label>
 
       <label>
-        Image
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-        />
+        Images (you can select multiple)
+        <input type="file" accept="image/*" multiple onChange={(e) => handleFiles(e.target.files)} />
       </label>
 
-      {formData.imageUrl && (
-        <div className="image-preview">
-          <img src={formData.imageUrl} alt="Preview" />
+      {images.length > 0 && (
+        <div className="images-grid">
+          {images.map((img, idx) => (
+            <div className="image-tile" key={idx}>
+              {img.previewUrl ? (
+                // previewUrl may be either object URL (new file) or existing uploaded URL
+                <img src={img.previewUrl} alt={`preview-${idx}`} />
+              ) : (
+                <div className="image-placeholder">No preview</div>
+              )}
+              <div className="tile-actions">
+                <button type="button" className="btn ghost small" onClick={() => removeImageAt(idx)}>Remove</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -219,17 +240,8 @@ export default function ProductForm({ product = null, onSaved = () => {}, onCanc
       )}
 
       <div className="form-buttons">
-        <button className="btn primary" type="submit" disabled={uploading}>
-          {uploading ? "Saving..." : "Save Product"}
-        </button>
-        <button
-          className="btn ghost"
-          type="button"
-          onClick={onCancel}
-          disabled={uploading}
-        >
-          Cancel
-        </button>
+        <button className="btn primary" type="submit" disabled={uploading}>{uploading ? "Saving..." : "Save Product"}</button>
+        <button className="btn ghost" type="button" onClick={onCancel} disabled={uploading}>Cancel</button>
       </div>
     </form>
   );

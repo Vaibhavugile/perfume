@@ -1,4 +1,4 @@
-// src/services/productsService.js
+// src/services/productsService.js (UPDATED)
 import {
   collection,
   addDoc,
@@ -13,33 +13,17 @@ import {
   getDoc,
   limit,
 } from "firebase/firestore";
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage } from "../firebase";
-
-/**
- * Firestore structure:
- * collection 'products' documents:
- * {
- * name: string,
- * price: number (paise or cents - storing the 50ml price for sorting/display),
- * prices: array<{volume: string, price: number}>, // NEW FIELD for multiple sizes
- * featured: boolean,
- * tags: array<string>,
- * imageUrl: string,
- * description: string,
- * notes: array<string>,
- * createdAt: timestamp
- * }
- */
 
 /* COLLECTION REF */
 const productsCol = collection(db, "products");
 
-/* Upload an image file to Firebase Storage and return the public URL */
+/* Upload a single image file to Firebase Storage and return the public URL + path */
 export async function uploadImageFile(file, filePath = null, onProgress = () => {}) {
   if (!file) return null;
-  const id = Date.now().toString();
-  const path = filePath || `product-images/${id}-${file.name}`;
+  const id = Date.now().toString() + "-" + Math.floor(Math.random() * 10000);
+  const path = filePath || `product-images/${id}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
   const sRef = storageRef(storage, path);
   const uploadTask = uploadBytesResumable(sRef, file);
 
@@ -48,7 +32,11 @@ export async function uploadImageFile(file, filePath = null, onProgress = () => 
       "state_changed",
       (snapshot) => {
         const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        onProgress(Math.round(progress));
+        try {
+          onProgress(Math.round(progress));
+        } catch (e) {
+          // ignore onProgress errors
+        }
       },
       (err) => reject(err),
       async () => {
@@ -59,24 +47,78 @@ export async function uploadImageFile(file, filePath = null, onProgress = () => 
   });
 }
 
-/* Add product (object fields) */
-export async function addProduct(product) {
-  // product: { name, price, prices, featured, tags, imageUrl, description, notes }
-  const docRef = await addDoc(productsCol, {
-    ...product,
-    createdAt: new Date(),
-  });
-  return { id: docRef.id, ...product };
+/* Upload multiple image files in parallel with aggregated progress callback
+   files: array of File
+   onProgress: (overallPercent:number) => void
+   Returns: [{url, path}, ...]
+*/
+export async function uploadMultipleImages(files = [], onProgress = () => {}) {
+  if (!Array.isArray(files) || files.length === 0) return [];
+
+  // track per-file progress
+  const progresses = new Array(files.length).fill(0);
+
+  const updateOverall = () => {
+    const sum = progresses.reduce((s, p) => s + p, 0);
+    const overall = Math.round(sum / progresses.length);
+    try {
+      onProgress(overall);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const uploadPromises = files.map((file, idx) =>
+    uploadImageFile(file, null, (p) => {
+      progresses[idx] = p || 0;
+      updateOverall();
+    })
+  );
+
+  // run uploads in parallel
+  const results = await Promise.all(uploadPromises);
+  // ensure progress reports 100% at end
+  try {
+    onProgress(100);
+  } catch (e) {}
+  return results; // array of {url, path}
 }
 
-/* Update product by id */
+/* Delete a file from Firebase Storage by its storage path */
+export async function deleteImageByPath(path) {
+  if (!path) return false;
+  try {
+    const dRef = storageRef(storage, path);
+    await deleteObject(dRef);
+    return true;
+  } catch (err) {
+    // could be 'object-not-found' or permission error; return false but don't throw
+    console.warn("Failed to delete image at path:", path, err?.code || err?.message || err);
+    return false;
+  }
+}
+
+/* Add product (object fields). Accepts images: [url,...], prices: [{volume,price}], purchasePrices: [{volume,price}] */
+export async function addProduct(product) {
+  // product: { name, price, prices, purchasePrices, featured, tags, images, description, notes }
+  const payload = {
+    ...product,
+    createdAt: new Date(),
+  };
+
+  const docRef = await addDoc(productsCol, payload);
+  return { id: docRef.id, ...payload };
+}
+
+/* Update product by id. Prefer passing only fields to update. This will set updatedAt automatically. */
 export async function updateProduct(id, updates) {
+  if (!id) throw new Error("Missing product id");
   const d = doc(db, "products", id);
-  await updateDoc(d, { ...updates });
+  await updateDoc(d, { ...updates, updatedAt: new Date() });
   return true;
 }
 
-/* Delete product */
+/* Delete product document by id (does NOT automatically delete storage images) */
 export async function deleteProduct(id) {
   const d = doc(db, "products", id);
   await deleteDoc(d);

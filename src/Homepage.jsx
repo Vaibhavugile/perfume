@@ -265,7 +265,7 @@ export default function Homepage({ products = [], onAddToCart = () => {} }) {
       <FindYourScent onAddToCart={onAddToCart} />
 
       {/* COLLECTION */}
-      <section id="collection" className="collection">
+      {/* <section id="collection" className="collection">
         <h2 className="section-title">Signature Collection</h2>
         <p className="section-sub">Curated favorites — crafted with care.</p>
 
@@ -288,13 +288,13 @@ export default function Homepage({ products = [], onAddToCart = () => {} }) {
             </motion.article>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* ABOUT */}
       <section id="about" className="about">
         <div className="about-inner">
           <div className="about-art" aria-hidden="true">
-            <img src="/smoke-fallback.jpg" alt="" />
+            <img src="/smoke-fallback.png" alt="" />
           </div>
           <div className="about-text">
             <h2 className="section-title">Our Atelier</h2>

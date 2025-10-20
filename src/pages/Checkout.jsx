@@ -1,5 +1,5 @@
 // src/pages/Checkout.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { formatPrice } from "../services/productsService";
@@ -22,6 +22,7 @@ const LAST_ORDER_ID_KEY = "lastOrderId";
 export default function CheckoutPage() {
   const { items, subtotal, totalQty, clearCart } = useCart();
   const navigate = useNavigate();
+  const formRef = useRef(null);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -45,6 +46,18 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({});
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // responsive breakpoint detection for mobile summary
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 900 : true
+  );
+  const handleResize = useCallback(() => {
+    setIsMobile(window.innerWidth <= 900);
+  }, []);
+  useEffect(() => {
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => window.removeEventListener("resize", handleResize);
+  }, [handleResize]);
 
   // load draft on mount (if exists)
   useEffect(() => {
@@ -143,9 +156,17 @@ export default function CheckoutPage() {
   }
 
   async function placeOrder(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setErrorMessage("");
-    if (!validate()) return;
+    if (!validate()) {
+      // if mobile, scroll to first error field lightly
+      const firstKey = Object.keys(errors)[0];
+      if (firstKey) {
+        const el = document.querySelector(`[name="${firstKey}"], input[aria-label="${firstKey}"]`);
+        if (el && typeof el.focus === "function") el.focus();
+      }
+      return;
+    }
     setProcessing(true);
 
     // Build order payload
@@ -153,7 +174,6 @@ export default function CheckoutPage() {
     const total = subtotal + shippingCost;
 
     const orderPayload = {
-      // store monetary values in smallest currency unit (e.g., paise) consistent with your service
       subtotal,
       shipping: shippingCost,
       tax: 0,
@@ -181,7 +201,7 @@ export default function CheckoutPage() {
       },
       payment: {
         method: form.paymentMethod,
-        status: form.paymentMethod === "cod" ? "pending" : "authorized", // placeholder
+        status: form.paymentMethod === "cod" ? "pending" : "authorized",
       },
       meta: {
         createdAt: new Date().toISOString(),
@@ -190,7 +210,6 @@ export default function CheckoutPage() {
     };
 
     try {
-      // Save to Firestore orders collection
       const uid = auth?.currentUser?.uid || null;
       const ordersCol = collection(db, "orders");
 
@@ -200,7 +219,6 @@ export default function CheckoutPage() {
         createdAt: serverTimestamp(),
       });
 
-      // Also add lightweight doc under users/{uid}/orders/{orderId} for quick user history
       if (uid) {
         try {
           const userOrderRef = doc(db, "users", uid, "orders", created.id);
@@ -217,20 +235,16 @@ export default function CheckoutPage() {
         }
       }
 
-      // Persist a last-order id for confirmation page to fetch
       try {
         localStorage.setItem(LAST_ORDER_ID_KEY, created.id);
-        // also save a local fallback snapshot in case Firestore fetch fails later
         localStorage.setItem("lastOrder", JSON.stringify({ id: created.id, ...orderPayload }));
       } catch (err) {
         // ignore localstorage errors
       }
 
-      // cleanup
       localStorage.removeItem(DRAFT_KEY);
       clearCart();
 
-      // navigate to confirmation
       navigate("/order-confirmation");
     } catch (err) {
       console.error("Order placement failed (Firestore):", err);
@@ -240,12 +254,26 @@ export default function CheckoutPage() {
     }
   }
 
+  // computed totals
+  const shippingCost = form.shippingMethod === "express" ? 19900 : 0;
+  const totalPrice = subtotal + shippingCost;
+
   const steps = [
     { id: 1, label: "Contact" },
     { id: 2, label: "Shipping" },
     { id: 3, label: "Payment" },
   ];
   const activeStep = form.paymentMethod === "card" ? 3 : form.address1 ? 2 : 1;
+
+  // programmatic submit for mobile CTA button
+  function handleMobilePlaceClick() {
+    if (formRef.current && typeof formRef.current.requestSubmit === "function") {
+      formRef.current.requestSubmit();
+    } else if (formRef.current) {
+      // fallback: call handler directly
+      placeOrder();
+    }
+  }
 
   return (
     <main className="checkout container">
@@ -261,62 +289,101 @@ export default function CheckoutPage() {
       <p className="lead">Complete your order — we’ll only use this info to fulfill your shipment.</p>
 
       <div className="checkout-grid">
-        <form className="checkout-form card" onSubmit={placeOrder} noValidate>
+        <form
+          className="checkout-form card"
+          onSubmit={placeOrder}
+          noValidate
+          ref={formRef}
+        >
           <section>
             <h2>Contact & Shipping</h2>
 
             <label>
               <div className="label">Full name</div>
-              <input type="text" value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder="Your full name" />
+              <input
+                name="fullName"
+                type="text"
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                placeholder="Your full name"
+                inputMode="text"
+              />
               {errors.fullName && <div className="error">{errors.fullName}</div>}
             </label>
 
             <label>
               <div className="label">Email</div>
-              <input type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="you@example.com" />
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder="you@example.com"
+                inputMode="email"
+              />
               {errors.email && <div className="error">{errors.email}</div>}
             </label>
 
             <label>
               <div className="label">Phone</div>
-              <input type="tel" value={form.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="+91 98765 43210" />
+              <input
+                name="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="+91 98765 43210"
+                inputMode="tel"
+              />
               {errors.phone && <div className="error">{errors.phone}</div>}
             </label>
 
             <label>
               <div className="label">Address line 1</div>
-              <input type="text" value={form.address1} onChange={(e) => updateField("address1", e.target.value)} placeholder="Street, building, suite" />
+              <input
+                name="address1"
+                type="text"
+                value={form.address1}
+                onChange={(e) => updateField("address1", e.target.value)}
+                placeholder="Street, building, suite"
+                inputMode="text"
+              />
               {errors.address1 && <div className="error">{errors.address1}</div>}
             </label>
 
             <label>
               <div className="label">Address line 2 <span className="muted">(optional)</span></div>
-              <input type="text" value={form.address2} onChange={(e) => updateField("address2", e.target.value)} placeholder="Apartment, floor, landmark" />
+              <input
+                name="address2"
+                type="text"
+                value={form.address2}
+                onChange={(e) => updateField("address2", e.target.value)}
+                placeholder="Apartment, floor, landmark"
+              />
             </label>
 
             <div className="two-col" style={{ marginTop: 4 }}>
               <label>
                 <div className="label">City</div>
-                <input type="text" value={form.city} onChange={(e) => updateField("city", e.target.value)} />
+                <input name="city" type="text" value={form.city} onChange={(e) => updateField("city", e.target.value)} />
                 {errors.city && <div className="error">{errors.city}</div>}
               </label>
 
               <label>
                 <div className="label">State / Region</div>
-                <input  type="text"value={form.state} onChange={(e) => updateField("state", e.target.value)} />
+                <input name="state" type="text" value={form.state} onChange={(e) => updateField("state", e.target.value)} />
               </label>
             </div>
 
             <div className="two-col" style={{ marginTop: 6 }}>
               <label>
                 <div className="label">Postal code</div>
-                <input  type="text" value={form.postal} onChange={(e) => updateField("postal", e.target.value)} />
+                <input name="postal" type="text" value={form.postal} onChange={(e) => updateField("postal", e.target.value)} />
                 {errors.postal && <div className="error">{errors.postal}</div>}
               </label>
 
               <label>
                 <div className="label">Country</div>
-                <input  type="text" value={form.country} onChange={(e) => updateField("country", e.target.value)} />
+                <input name="country" type="text" value={form.country} onChange={(e) => updateField("country", e.target.value)} />
               </label>
             </div>
           </section>
@@ -325,25 +392,49 @@ export default function CheckoutPage() {
             <h2>Shipping & Payment</h2>
 
             <div className="shipping-row">
-              <label>
-                <input type="radio" name="shipping" checked={form.shippingMethod === "standard"} onChange={() => updateField("shippingMethod", "standard")} />
+              <label className="radio-touch">
+                <input
+                  aria-label="Standard shipping"
+                  type="radio"
+                  name="shipping"
+                  checked={form.shippingMethod === "standard"}
+                  onChange={() => updateField("shippingMethod", "standard")}
+                />
                 <span className="label">Standard shipping (free)</span>
               </label>
 
-              <label>
-                <input type="radio" name="shipping" checked={form.shippingMethod === "express"} onChange={() => updateField("shippingMethod", "express")} />
+              <label className="radio-touch">
+                <input
+                  aria-label="Express shipping"
+                  type="radio"
+                  name="shipping"
+                  checked={form.shippingMethod === "express"}
+                  onChange={() => updateField("shippingMethod", "express")}
+                />
                 <span className="label">Express shipping ({formatPrice(19900)})</span>
               </label>
             </div>
 
             <div className="payment-row" style={{ marginTop: 12 }}>
-              <label>
-                <input type="radio" name="payment" checked={form.paymentMethod === "cod"} onChange={() => updateField("paymentMethod", "cod")} />
+              <label className="radio-touch">
+                <input
+                  aria-label="Cash on Delivery"
+                  type="radio"
+                  name="payment"
+                  checked={form.paymentMethod === "cod"}
+                  onChange={() => updateField("paymentMethod", "cod")}
+                />
                 <span className="label">Cash on Delivery</span>
               </label>
 
-              <label>
-                <input type="radio" name="payment" checked={form.paymentMethod === "card"} onChange={() => updateField("paymentMethod", "card")} />
+              <label className="radio-touch">
+                <input
+                  aria-label="Card payment"
+                  type="radio"
+                  name="payment"
+                  checked={form.paymentMethod === "card"}
+                  onChange={() => updateField("paymentMethod", "card")}
+                />
                 <span className="label">Card (test)</span>
               </label>
             </div>
@@ -352,26 +443,26 @@ export default function CheckoutPage() {
               <div className="card-fields" style={{ marginTop: 10 }}>
                 <label>
                   <div className="label">Name on card</div>
-                  <input value={form.cardName} onChange={(e) => updateField("cardName", e.target.value)} placeholder="Name on card" />
+                  <input name="cardName" value={form.cardName} onChange={(e) => updateField("cardName", e.target.value)} placeholder="Name on card" />
                   {errors.cardName && <div className="error">{errors.cardName}</div>}
                 </label>
 
                 <label>
                   <div className="label">Card number</div>
-                  <input placeholder="4242 4242 4242 4242" value={form.cardNumber} onChange={(e) => updateField("cardNumber", e.target.value)} />
+                  <input name="cardNumber" placeholder="4242 4242 4242 4242" value={form.cardNumber} onChange={(e) => updateField("cardNumber", e.target.value)} />
                   {errors.cardNumber && <div className="error">{errors.cardNumber}</div>}
                 </label>
 
                 <div className="two-col" style={{ marginTop: 6 }}>
                   <label>
                     <div className="label">Expiry (MM/YY)</div>
-                    <input value={form.cardExp} onChange={(e) => updateField("cardExp", e.target.value)} />
+                    <input name="cardExp" value={form.cardExp} onChange={(e) => updateField("cardExp", e.target.value)} />
                     {errors.cardExp && <div className="error">{errors.cardExp}</div>}
                   </label>
 
                   <label>
                     <div className="label">CVV</div>
-                    <input value={form.cardCvv} onChange={(e) => updateField("cardCvv", e.target.value)} />
+                    <input name="cardCvv" value={form.cardCvv} onChange={(e) => updateField("cardCvv", e.target.value)} />
                     {errors.cardCvv && <div className="error">{errors.cardCvv}</div>}
                   </label>
                 </div>
@@ -381,17 +472,17 @@ export default function CheckoutPage() {
 
           {errorMessage && <div className="error" style={{ marginTop: 8 }}>{errorMessage}</div>}
 
-          <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
+          <div className="actions-row" style={{ marginTop: 12 }}>
             <button className="btn ghost" type="button" onClick={() => navigate(-1)} disabled={processing}>
               Back
             </button>
             <button className="btn primary" type="submit" disabled={processing}>
-              {processing ? "Processing…" : `Place order • ${formatPrice(subtotal + (form.shippingMethod === "express" ? 19900 : 0))}`}
+              {processing ? "Processing…" : `Place order • ${formatPrice(totalPrice)}`}
             </button>
           </div>
         </form>
 
-        <aside className="order-summary card">
+        <aside className="order-summary card" aria-label="Order summary">
           <h2>Order summary</h2>
 
           <div className="summary-items" aria-live="polite">
@@ -432,14 +523,34 @@ export default function CheckoutPage() {
           </div>
           <div className="summary-line">
             <div>Shipping</div>
-            <div>{formatPrice(form.shippingMethod === "express" ? 19900 : 0)}</div>
+            <div>{formatPrice(shippingCost)}</div>
           </div>
           <div className="summary-line total">
             <div>Total</div>
-            <div className="big">{formatPrice(subtotal + (form.shippingMethod === "express" ? 19900 : 0))}</div>
+            <div className="big">{formatPrice(totalPrice)}</div>
           </div>
         </aside>
       </div>
+
+      {/* Mobile fixed bottom summary + CTA */}
+      {isMobile && (
+        <div className="mobile-summary" aria-hidden={false}>
+          <div className="mobile-summary-left">
+            <div className="mobile-total-label">Total</div>
+            <div className="mobile-total-amount">{formatPrice(totalPrice)}</div>
+          </div>
+          <div className="mobile-summary-right">
+            <button
+              className="btn primary"
+              onClick={handleMobilePlaceClick}
+              disabled={processing}
+              aria-label="Place order"
+            >
+              {processing ? "Processing…" : `Place order • ${formatPrice(totalPrice)}`}
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

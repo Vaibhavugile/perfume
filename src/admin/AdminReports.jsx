@@ -1,6 +1,4 @@
-// src/admin/AdminReports.jsx
-// Admin reports optimized for larger datasets: server-side pagination, batched export, presets, incremental aggregates.
-// Place at src/admin/AdminReports.jsx
+
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { db } from "../firebase";
 import {
@@ -14,8 +12,8 @@ import {
 } from "firebase/firestore";
 import "./admin-reports.css";
 
-const DEFAULT_PAGE_SIZE = 200; // fetch size per page for browsing (tune up/down)
-const EXPORT_BATCH = 500; // batch size for "Export All" (tune depending on memory/time)
+const DEFAULT_PAGE_SIZE = 200;
+const EXPORT_BATCH = 500;
 const PRESETS = [
   { label: "7 days", days: 7 },
   { label: "30 days", days: 30 },
@@ -23,7 +21,6 @@ const PRESETS = [
   { label: "All", days: 0 },
 ];
 
-// Helpers to normalize timestamps / totals
 const toDate = (v) => {
   if (!v) return null;
   if (typeof v.toDate === "function") return v.toDate();
@@ -31,17 +28,13 @@ const toDate = (v) => {
   if (v instanceof Date) return v;
   return null;
 };
-const getTotalPaise = (o) => {
-  // prefer explicit paise fields; fallback to other conventions
-  return Number(o.totalPaise ?? o.total ?? o.amount ?? 0);
-};
+const getTotalPaise = (o) => Number(o.totalPaise ?? o.total ?? o.amount ?? 0);
 const paiseToRupeesNumber = (p) => Number(p) / 100;
 const fmtINR = (p) =>
   Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
     paiseToRupeesNumber(Number(p ?? 0))
   );
 
-// incremental aggregator
 function computeAggregates(orders) {
   const salesByDay = {};
   const prodMap = {};
@@ -71,7 +64,7 @@ function computeAggregates(orders) {
 
 export default function AdminReports() {
   const [loading, setLoading] = useState(false);
-  const [ordersPage, setOrdersPage] = useState([]); // orders loaded so far (paged)
+  const [ordersPage, setOrdersPage] = useState([]);
   const [lastDocSnapshot, setLastDocSnapshot] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -79,25 +72,27 @@ export default function AdminReports() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [preset, setPreset] = useState("30 days");
+
+  // live search box (debounced)
   const [searchQ, setSearchQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(searchQ.trim().toLowerCase()), 260);
+    return () => clearTimeout(t);
+  }, [searchQ]);
 
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState({ done: 0, totalBatches: 0 });
-
-  // ref to cancel exporting if user navigates away (simple flag)
   const exportCancelRef = useRef(false);
 
-  // load first page whenever date filters or pageSize change
   useEffect(() => {
     setOrdersPage([]);
     setLastDocSnapshot(null);
     setHasMore(false);
-    // quick run to fetch first page
     fetchNextPage({ reset: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, pageSize, preset]);
 
-  // compute dateFrom/dateTo from preset if user picks preset
   useEffect(() => {
     const p = PRESETS.find((x) => x.label === preset);
     if (!p) return;
@@ -113,7 +108,6 @@ export default function AdminReports() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset]);
 
-  // Build Firestore query with date filters
   const buildBaseQuery = () => {
     const col = collection(db, "orders");
     const clauses = [];
@@ -125,11 +119,9 @@ export default function AdminReports() {
       const to = new Date(dateTo + "T23:59:59.999");
       clauses.push(where("createdAt", "<=", to));
     }
-    // always order by createdAt desc
     return { col, clauses, orderField: "createdAt" };
   };
 
-  // fetch page
   async function fetchNextPage({ reset = false } = {}) {
     setLoading(true);
     try {
@@ -146,19 +138,18 @@ export default function AdminReports() {
       setHasMore(snap.docs.length === pageSize);
     } catch (err) {
       console.error("reports: fetchNextPage failed", err);
+      alert("Unable to load orders. Check console for details.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Derived incremental aggregations (only from ordersPage currently loaded)
   const aggregates = useMemo(() => computeAggregates(ordersPage), [ordersPage]);
   const totalSalesPaise = useMemo(() => aggregates.salesByDay.reduce((s, d) => s + (d.totalPaise || 0), 0), [aggregates]);
   const totalOrders = useMemo(() => ordersPage.length, [ordersPage]);
 
-  // client-side search over loaded page (keeps browsing fast)
   const filteredOrders = useMemo(() => {
-    const q = (searchQ || "").trim().toLowerCase();
+    const q = debouncedQ || "";
     if (!q) return ordersPage;
     return ordersPage.filter((o) => {
       const hay = [
@@ -167,13 +158,14 @@ export default function AdminReports() {
         o.customer?.fullName,
         o.customer?.email,
         o.customer?.phone,
-        o.items?.map((it) => it.name)?.join(" "),
-      ].join(" ") .toLowerCase();
+        (o.items || []).map((it) => it.name).join(" "),
+      ]
+        .join(" ")
+        .toLowerCase();
       return hay.includes(q);
     });
-  }, [ordersPage, searchQ]);
+  }, [ordersPage, debouncedQ]);
 
-  // Export: pages through all orders matching the filters in batched queries
   async function exportAllAsCSV() {
     if (!window.confirm("Export all matching orders as CSV? This will page through server results.")) return;
     setExporting(true);
@@ -182,11 +174,9 @@ export default function AdminReports() {
 
     try {
       const { col, clauses, orderField } = buildBaseQuery();
-      let allLines = [];
-      const headers = ["orderId", "createdAt", "total_INR", "items"];
-      allLines.push(headers.join(","));
+      const headers = ["orderId", "createdAt", "total_INR", "items"]; 
+      const allLines = [headers.join(",")];
 
-      // We'll batch-read until a batch returns zero docs
       let last = null;
       let batchNum = 0;
       while (true) {
@@ -202,17 +192,14 @@ export default function AdminReports() {
           const totalPaise = getTotalPaise(o);
           const items = (o.items || []).map((it) => `${it.name || it.sku || it.id} x${it.qty ?? it.quantity ?? 1}`).join("; ");
           const totalRupees = paiseToRupeesNumber(totalPaise).toFixed(2);
-          // escape double quotes in items
-          allLines.push([`"${o.id}"`, `"${created}"`, `${totalRupees}`, `"${(items || "").replaceAll('"','""')}"`].join(","));
+          allLines.push([`"${o.id}"`, `"${created}"`, `${totalRupees}`, `"${(items || "").replaceAll('"','""') }"`].join(","));
         }
         batchNum++;
         setExportProgress((p) => ({ ...p, done: batchNum }));
         last = docs[docs.length - 1];
-        // end condition
         if (docs.length < EXPORT_BATCH) break;
       }
 
-      // produce CSV blob and download
       const blob = new Blob([allLines.join("\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -238,11 +225,16 @@ export default function AdminReports() {
         </div>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <input className="ar-input ar-search" placeholder="Search loaded orders..." value={searchQ} onChange={(e) => setSearchQ(e.target.value)} />
+          <input aria-label="Search loaded orders" className="ar-input ar-search" placeholder="Search loaded orders..." value={searchQ} onChange={(e) => setSearchQ(e.target.value)} />
+
           <button className="ar-btn" onClick={() => { setOrdersPage([]); fetchNextPage({ reset: true }); }}>Refresh</button>
-          <button className="ar-btn ar-ghost" onClick={exportAllAsCSV} disabled={exporting}>
-            {exporting ? `Exporting… (${exportProgress.done})` : "Export All"}
-          </button>
+
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button className="ar-btn ar-ghost" onClick={() => { if (exporting) { exportCancelRef.current = true; } else { exportAllAsCSV(); } }}>
+              {exporting ? `Cancel export` : "Export All"}
+            </button>
+            {exporting && <div className="ar-export-progress" aria-live="polite">Batches processed: {exportProgress.done}</div>}
+          </div>
         </div>
       </div>
 

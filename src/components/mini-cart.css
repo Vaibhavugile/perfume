@@ -1,11 +1,11 @@
-/* mini-cart.css - theme matched for dark site, purple gradient primary button */
-
+/* mini-cart.css - fully mobile friendly version */
 .mc-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
   z-index: 1200;
   backdrop-filter: blur(2px);
+  touch-action: none;
 }
 
 /* Panel */
@@ -26,6 +26,7 @@
   overflow: hidden;
   color: #111;
   border: 1px solid rgba(255,255,255,0.04);
+  overscroll-behavior: contain;
 }
 
 /* Header */
@@ -40,36 +41,37 @@
 .mc-title {
   font-size: 18px;
   margin: 0;
-  color: #0f1720; /* near-black heading */
+  color: #0f1720;
 }
 
 .mc-subtitle {
   font-size: 12px;
-  color: #6b7280; /* muted */
+  color: #6b7280;
   margin-top: 4px;
 }
 
 .mc-close {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   color: #374151;
-  padding: 6px;
+  padding: 8px;
   border-radius: 6px;
 }
 .mc-close:hover { background: rgba(0,0,0,0.04); }
 
-/* List area */
+/* List */
 .mc-list {
   flex: 1 1 auto;
   overflow-y: auto;
   padding-right: 6px;
   margin-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Item row */
+/* Items */
 .mc-item {
   display: flex;
   gap: 12px;
@@ -83,8 +85,6 @@
   height: 64px;
   object-fit: cover;
   border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(12, 18, 20, 0.06);
-  background: linear-gradient(180deg, #fff 0%, #f6f6f6 100%);
   flex-shrink: 0;
 }
 
@@ -108,12 +108,13 @@
   font-size: 12px;
 }
 
-/* Controls: qty + remove */
+/* Controls */
 .mc-controls {
   display: flex;
   gap: 12px;
   align-items: center;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .qty-controls {
@@ -126,11 +127,11 @@
 }
 
 .qty-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
   background: transparent;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   color: #111827;
 }
@@ -138,37 +139,32 @@
 
 .qty-input {
   width: 56px;
-  height: 32px;
+  height: 36px;
   border: 1px solid rgba(15, 23, 32, 0.06);
   background: transparent;
   text-align: center;
   border-radius: 6px;
   font-size: 14px;
-  padding: 4px;
 }
 
 /* Remove button */
 .mc-remove {
   border: none;
   background: transparent;
-  color: #ef4444; /* red */
+  color: #ef4444;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
 
-/* Price column */
+/* Price */
 .mc-line {
-  min-width: 90px;
+  min-width: 80px;
   text-align: right;
   font-weight: 700;
   color: #0b1220;
 }
 
-.mc-line-price {
-  font-size: 14px;
-}
-
-/* Empty state */
+/* Empty */
 .mc-empty {
   padding: 32px 12px;
   text-align: center;
@@ -182,6 +178,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: #fff;
 }
 
 .mc-sub {
@@ -189,53 +186,66 @@
   justify-content: space-between;
   align-items: center;
 }
-.mc-sub .muted { color: #6b7280; }
 .bold { font-weight: 700; color: #0b1220; }
 
-/* Actions: ghost + primary */
+/* Buttons */
 .mc-actions {
   display: flex;
   gap: 10px;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .btn {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 999px;
   border: 1px solid transparent;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
+  flex: 1 1 auto;
 }
 
-/* ghost button - subtle outline */
 .btn.ghost {
   background: transparent;
   color: #374151;
   border: 1px solid rgba(15,23,32,0.06);
 }
 
-/* primary gradient (purple/pink) matching your theme */
 .btn.primary {
   background: linear-gradient(90deg,#ff4fa1 0%,#7b47ff 100%);
   color: #fff;
   box-shadow: 0 6px 20px rgba(123,71,255,0.18);
 }
 
-/* make the "Go to Cart" stand out a bit wider */
-.btn.primary.mc-go {
-  flex: 1 1 auto;
-}
-
-/* responsive: smaller viewport */
+/* --- Mobile --- */
 @media (max-width: 640px) {
   .mini-cart {
-    top: 0;
+    top: auto;
+    bottom: 0;
     right: 0;
-    height: 100vh;
     width: 100%;
-    border-radius: 0;
+    height: 85vh;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.3);
+  }
+
+  .mc-header {
+    align-items: center;
+  }
+
+  .mc-title {
+    font-size: 20px;
+  }
+
+  .mc-thumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .btn {
+    font-size: 16px;
     padding: 14px;
   }
-  .mc-list { padding-right: 0; }
 }

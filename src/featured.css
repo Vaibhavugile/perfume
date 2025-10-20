@@ -165,3 +165,30 @@
   .grid { grid-template-columns: 1fr; }
   .perfume-decor { display: none; } /* reduce visuals on small screens */
 }
+
+  .thumb-row {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    z-index: 3;
+  }
+  .thumb-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid rgba(255,255,255,0.06);
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.35);
+  }
+  .thumb-btn.active { border-color: rgba(255,255,255,0.18); transform: translateY(-4px); }
+
+  .price-badge { background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); display:flex; flex-direction:column; align-items:flex-start; }
+  .price-badge .small { font-size: 11px; color: var(--muted); }
+  .price-badge .price { font-weight:700; color: var(--accent1); }

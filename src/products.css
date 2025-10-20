@@ -1,48 +1,65 @@
-/* src/styles/products.css */
-
 /* ---------- Theme variables ---------- */
 :root {
   --muted: #a0a0a6;
   --accent1: #d63384; /* pink */
   --accent2: #6f42c1; /* purple */
-  --bg-start: #0a0a0c;
-  --bg-end: #111;
+  --bg-start: #080809;
+  --bg-end: #0f0f11;
   --card-glass: rgba(255, 255, 255, 0.03);
   --card-border: rgba(255, 255, 255, 0.05);
-  --glass-strong: rgba(255,255,255,0.08);
 }
 
-/* ---------- Basic layout ---------- */
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #fff; background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%); }
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
+/* ---------- Page Container ---------- */
+.products-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* ---------- Containers ---------- */
 .container {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 /* ---------- Hero ---------- */
 .products-hero {
   padding: 48px 0 24px;
-  color: white;
-  background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
-  text-align: left;
+  color: #fff;
 }
-
 .products-hero h1 {
   font-size: 40px;
+  margin: 0;
   font-weight: 800;
-  margin: 0 0 8px;
   letter-spacing: -0.02em;
 }
-
 .products-hero .muted {
   color: var(--muted);
   margin-top: 6px;
 }
 
-/* ---------- Controls row ---------- */
+/* ---------- Controls ---------- */
 .products-controls {
   display: flex;
   gap: 12px;
@@ -50,80 +67,189 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "
   margin-top: 18px;
   flex-wrap: wrap;
 }
-
+.search-wrap {
+  flex: 1 1 100%;
+}
 .search-wrap input {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: #fff;
-  min-width: 300px;
-  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 520px;
+  min-width: 0;
+  transition: all 0.18s;
 }
-
 .search-wrap input:focus {
   border-color: var(--accent2);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.filters select {
-  padding: 8px 10px;
+/* ---------- Custom Select ---------- */
+.custom-select {
+  position: relative;
+  display: inline-block;
+  font-size: 14px;
+  min-width: 160px;
+  user-select: none;
+  z-index: 10;
+}
+.custom-select .select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
-  margin-left: 8px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.custom-select .select-btn:hover {
+  border-color: var(--accent2);
+  background: rgba(255, 255, 255, 0.08);
+}
+.custom-select .caret {
+  margin-left: 10px;
+  font-size: 12px;
+  transform: rotate(0deg);
+  transition: transform 0.18s, color 0.18s;
+  color: var(--muted);
+}
+.custom-select.open .caret {
+  transform: rotate(180deg);
+  color: var(--accent2);
+}
+.custom-select .menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #000;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 0 20px rgba(111, 66, 193, 0.25);
+  border: 1px solid rgba(111, 66, 193, 0.25);
+  display: none;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 1200;
+}
+.custom-select.open .menu {
+  display: block;
+}
+.custom-select .menu li {
+  list-style: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+.custom-select .menu li:hover,
+.custom-select .menu li[aria-current="true"] {
+  background: var(--accent2);
+  color: #fff;
 }
 
-/* ---------- Product grid ---------- */
+/* ---------- Product Grid (4x2 desktop, 2x2 mobile) ---------- */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
+  gap: 20px;
   padding: 32px 20px 40px;
+  justify-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* ---------- Product card ---------- */
+/* Desktop: 4 columns × 2 rows (8 visible) */
+@media (min-width: 1200px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(260px, auto);
+  }
+}
+
+/* Laptops/Tablets: 3 columns */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(240px, auto);
+  }
+}
+
+/* Mobile: 2 columns × natural rows (no inner scroll) */
+@media (max-width: 640px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px 12px 28px;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .product-card {
+    min-height: 180px;
+    padding: 8px;
+  }
+
+  .pc-media {
+    height: 120px;
+  }
+
+  .pc-body h3 {
+    font-size: 14px;
+  }
+
+  .price {
+    font-size: 13px;
+  }
+}
+
+/* ---------- Product Card ---------- */
 .product-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.08));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.06));
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
   padding: 14px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-height: 420px;
+  transition: transform 0.28s, box-shadow 0.28s;
+  min-height: 300px;
 }
-
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(111, 66, 193, 0.18);
+  box-shadow: 0 10px 30px rgba(14, 14, 14, 0.25);
 }
 
+/* media area */
 .pc-media {
   width: 100%;
-  height: 240px;
+  height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.3));
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.25));
   border-radius: 12px;
   overflow: hidden;
   position: relative;
 }
-
 .pc-media img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: transform 0.5s ease;
+  transition: transform 0.45s ease;
 }
-
 .product-card:hover .pc-media img {
   transform: translateY(-6px) scale(1.02);
 }
 
+/* featured badge */
 .pc-badge {
   position: absolute;
   top: 10px;
@@ -136,43 +262,34 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "
   font-size: 12px;
 }
 
-/* ---------- Card body ---------- */
+/* ---------- Card Body ---------- */
 .pc-body {
-  padding: 14px 6px 0;
+  padding: 10px 6px 0;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
-
 .pc-body h3 {
   margin: 0;
   color: #fff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
-  max-width: 100%;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-
-.pc-body .muted {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-/* clamp description to 2 lines */
 .pc-body .muted.small {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   color: var(--muted);
   font-size: 13px;
   margin-top: 6px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-/* ---------- Footer row: price, select, actions ---------- */
+/* ---------- Footer ---------- */
 .pc-foot {
   margin-top: auto;
   display: flex;
@@ -181,85 +298,26 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "
   gap: 12px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
+  flex-wrap: wrap;
 }
-
-/* Left group: select + price */
-.pc-foot > .left-group,
-.pc-foot > div:first-child {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  min-width: 0;
-  flex: 1 1 auto;
+.pc-foot .custom-select {
+  min-width: 120px;
+  font-size: 13px;
 }
-
-/* Actions group on the right */
-.pc-foot .actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-/* ---------- Volume & price dropdown ---------- */
-.pc-foot select {
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+.pc-foot .custom-select .select-btn {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.pc-foot .custom-select .menu {
+  background: #000;
   color: #fff;
-  font-size: 14px;
-  font-weight: 500;
-  appearance: none;
-  outline: none;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  max-width: 160px;
-  min-width: 100px;
-  width: auto;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 36px; /* room for arrow */
+  border: 1px solid rgba(111, 66, 193, 0.25);
 }
-
-/* custom arrow via background images */
-.pc-foot select {
-  background-image: linear-gradient(45deg, transparent 50%, #fff 50%),
-                    linear-gradient(135deg, #fff 50%, transparent 50%),
-                    linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.02));
-  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px), 100% 0;
-  background-size: 6px 6px, 6px 6px, 1px 1.5em;
-  background-repeat: no-repeat;
-}
-
-/* hover & focus states */
-.pc-foot select:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-.pc-foot select:focus {
-  border-color: var(--accent2);
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.25);
-}
-
-/* options inside the native menu (appearance limited by browser) */
-.pc-foot option {
-  background: #0a0a0c;
+.pc-foot .custom-select .menu li:hover {
+  background: var(--accent2);
   color: #fff;
-  font-size: 14px;
-  padding: 6px;
-}
-
-/* Price text */
-.price {
-  font-weight: 700;
-  color: #fff;
-  font-size: 15px;
-  margin-left: 8px;
-  white-space: nowrap;
 }
 
 /* ---------- Buttons ---------- */
@@ -270,31 +328,23 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all 0.18s;
 }
-
 .btn.primary {
   background: linear-gradient(90deg, var(--accent1), var(--accent2));
-  color: white;
-  box-shadow: 0 4px 16px rgba(111, 66, 193, 0.25);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(111, 66, 193, 0.18);
 }
-
 .btn.ghost {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
 }
-
-.btn:hover { transform: translateY(-1px); }
-
-/* small variants for product card */
-.product-card .btn.small {
-  padding: 6px 10px;
-  font-size: 13px;
-  border-radius: 999px;
+.btn:hover {
+  transform: translateY(-1px);
 }
 
-/* actions row below grid */
+/* ---------- Empty / Load more ---------- */
 .actions-row {
   padding: 18px 20px 60px;
   display: flex;
@@ -302,137 +352,56 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "
   align-items: center;
   gap: 14px;
 }
-
-/* empty state */
 .empty {
   padding: 28px;
   text-align: center;
   color: var(--muted);
 }
 
-/* ---------- Footer layout / overflow fixes ---------- */
-/* Ensure left group and actions behave predictably when space is limited */
-.pc-foot {
-  flex-wrap: nowrap;
+/* ---------- Mobile fine-tuning ---------- */
+@media (max-width: 420px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  .products-hero { padding-left: 8px; padding-right: 8px; }
+  .products-controls { gap: 8px; }
+  .search-wrap input { padding: 8px 12px; font-size: 14px; }
+}
+/* ---------- Dropdown flip support (add near .custom-select styles) ---------- */
+/* Default menu (downwards) */
+.custom-select .menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  transform-origin: top center;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+  opacity: 1;
+  will-change: transform, opacity;
 }
 
-/* allow wrapping on smaller screens to avoid overflow */
-@media (max-width: 900px) {
-  .pc-foot {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .pc-foot > .left-group,
-  .pc-foot > div:first-child {
-    flex: 1 1 60%;
-    min-width: 0;
-  }
-  .pc-foot .actions {
-    flex: 1 1 36%;
-    justify-content: flex-end;
-  }
+/* Drop-up variant: place menu above the control */
+.custom-select.drop-up .menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform-origin: bottom center;
 }
 
-/* Select arrow accessibility tweak for IE/Edge */
-.pc-foot select::-ms-expand { display: none; }
-
-/* ---------- Responsive grid: ensure 2x2 on mobile ---------- */
-@media (max-width: 640px) {
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns so 4 items visible as 2x2 */
-    gap: 12px;
-    padding: 20px;
-  }
-
-  .product-card {
-    padding: 10px;
-    border-radius: 10px;
-    min-height: 360px;
-  }
-
-  .pc-media { height: 160px; border-radius: 10px; }
-  .pc-body h3 { font-size: 16px; }
-  .pc-body .muted.small { font-size: 12px; }
-  .pc-foot select { max-width: 120px; min-width: 90px; font-size: 13px; padding: 6px 10px; }
-  .pc-foot .price { font-size: 14px; }
-  .product-card .actions .btn { padding: 6px 10px; font-size: 13px; }
-  .pc-body { min-height: 120px; }
+/* Add a slight lift & shadow so flipped menus feel natural */
+.custom-select .menu,
+.custom-select.drop-up .menu {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 18px rgba(111, 66, 193, 0.08);
 }
 
-/* tablet layout tweaks (slightly wider) */
-@media (min-width: 641px) and (max-width: 900px) {
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-  }
-  .product-card { min-height: 380px; }
+/* If you want a subtle open animation scale */
+.custom-select.open .menu {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.custom-select.open .menu[style*="will-flip"] {
+  /* no-op for browsers that inline style; kept for reference */
 }
 
-/* larger screens: optionally constrain columns */
-@media (min-width: 1100px) {
-  .products-grid { gap: 28px; }
-}
-
-/* ---------- Accessibility / UX niceties ---------- */
-/* Make select arrow area a bit more visible on dark background */
-.pc-foot select {
-  background-clip: padding-box;
-}
-
-/* Focus ring for interactive elements */
-button:focus,
-input:focus,
-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.06);
-}
-
-/* small utility classes used elsewhere */
-.muted { color: var(--muted); }
-.bold { font-weight: 700; }
-.small { font-size: 13px; }
-
-/* ---------- End of file ---------- */
-/* ----- View Button below Add button ----- */
-.pc-foot .actions.vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  max-width: 140px;
-}
-
-/* make Add button stand out */
-.pc-foot .actions.vertical .btn.primary {
-  background: linear-gradient(90deg, var(--accent1), var(--accent2));
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(111, 66, 193, 0.25);
-}
-
-/* make View button subtle but visible */
-.pc-foot .actions.vertical .btn.view-btn {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  transition: all 0.2s ease;
-}
-
-.pc-foot .actions.vertical .btn.view-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-/* On mobile, stretch buttons for easier tapping */
-@media (max-width: 640px) {
-  .pc-foot .actions.vertical {
-    flex-direction: column;
-    width: 100%;
-    max-width: none;
-    gap: 6px;
-  }
-  .pc-foot .actions.vertical .btn {
-    width: 100%;
-  }
+/* ensure menu is never clipped by overflow parents when possible */
+.custom-select,
+.custom-select .menu {
+  z-index: 1400; /* above most other page elements */
 }
